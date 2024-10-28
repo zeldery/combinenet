@@ -25,6 +25,10 @@ def main():
         model = ChargeModel()
     elif args.type == 'charge_ensemble':
         model = ChargeEnsembleModel()
+    elif args.type == 'charge_complete':
+        model = ChargeCompleteModel()
+    elif args.type == 'charge_complete_ensemble':
+        model = ChargeCompleteEnsembleModel()
     elif args.type == 'charge_dispersion':
         model = ChargeDispersionModel()
     elif args.type == 'charge_dispersion_ensemble':

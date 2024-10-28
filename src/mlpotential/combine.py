@@ -7,7 +7,7 @@ Current support:
 
 from .net import IndexNetwork, NetworkEnsemble
 from .sf import SymmetryFunction
-from .charge import ChargeEquilibration
+from .charge import ChargeEquilibration, ChargeCompleteEquilibration
 from .dispersion import ExchangeHoleDispersion
 from .utils import create_element_encoder
 import torch
@@ -63,7 +63,7 @@ class ShortRangeModel(nn.Module):
 
 class ShortRangeEnsembleModel(ShortRangeModel):
     '''
-    
+    Similar to the short-range neural network, but with ensemble of neural network
     '''
     def __init__(self):
         super().__init__()
@@ -168,9 +168,25 @@ class ChargeModel(nn.Module):
         return {'element_list': self.element_list.copy(), 'symmetry_function': self.symmetry_function.dump(),
                 'charge_model': self.charge_model.dump(), 'short_network': self.short_network.dump()}
 
+class ChargeCompleteModel(ChargeModel):
+    '''
+    The model use the full energy term from charge-equilibration scheme
+    '''
+    def __init__(self):
+        super().__init__()
+
+    def load(self, data):
+        self.element_list = data['element_list'].copy()
+        self.symmetry_function = SymmetryFunction()
+        self.symmetry_function.load(data['symmetry_function'])
+        self.charge_model = ChargeCompleteEquilibration()
+        self.charge_model.load(data['charge_model'])
+        self.short_network = IndexNetwork()
+        self.short_network.load(data['short_network'])
+
 class ChargeEnsembleModel(ChargeModel):
     '''
-    
+    Similar to the ChargeModel, but with the ensemble of neural network for energy term
     '''
     def __init__(self):
         super().__init__()
@@ -188,9 +204,26 @@ class ChargeEnsembleModel(ChargeModel):
         return {'element_list': self.element_list.copy(), 'symmetry_function': self.symmetry_function.dump(),
                 'charge_model': self.charge_model.dump(), 'short_ensemble': self.short_network.dump()}
 
+class ChargeCompleteEnsembleModel(ChargeEnsembleModel):
+    '''
+    Similar to ChargeCompleteModel, but with the ensemble for short-range term
+    '''
+    def __init__(self):
+        super().__init__()
+
+    def load(self, data):
+        self.element_list = data['element_list'].copy()
+        self.symmetry_function = SymmetryFunction()
+        self.symmetry_function.load(data['symmetry_function'])
+        self.charge_model = ChargeCompleteEquilibration()
+        self.charge_model.load(data['charge_model'])
+        self.short_network = NetworkEnsemble()
+        self.short_network.load(data['short_ensemble'])
+
 class DispersionModel(nn.Module):
     '''
-    
+    Machine learning exchange-hole dispersiosn model (MLXDM)
+    Similar implementation of torchanipbe0. See reference/citation
     '''
     def __init__(self):
         super().__init__()
@@ -316,7 +349,7 @@ class DispersionModel(nn.Module):
 
 class DispersionEnsembleModel(DispersionModel):
     '''
-    
+    Similar to dispersion model, but with ensemble for short-range energy term
     '''
     def __init__(self):
         super().__init__()
@@ -336,7 +369,7 @@ class DispersionEnsembleModel(DispersionModel):
 
 class ChargeDispersionModel(nn.Module):
     '''
-    
+    Combined model of charge-equilibration scheme and MLXDM model
     '''
     def __init__(self):
         super().__init__()
@@ -402,7 +435,7 @@ class ChargeDispersionModel(nn.Module):
         
 class ChargeDispersionEnsembleModel(ChargeDispersionModel):
     '''
-    
+    Similar to ChargeDispersionModel, but with ensemble for short-range term
     '''
     def __init__(self):
         super().__init__()

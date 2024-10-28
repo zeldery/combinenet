@@ -128,6 +128,10 @@ class H5PyScanner:
             yield result
                 
     def generate_iterator(self, list_file_name, n_batch, output_name, testratio):
+        '''
+        Generate the batched masked data file for training
+        Help to load the data faster for training
+        '''
         file = h5py.File(output_name, 'w')
         file.create_group('train')
         file.create_group('test')
