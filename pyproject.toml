@@ -3,9 +3,9 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 [project]
 name = "mlpotential"
-version = "0.0.2"
+version = "0.0.5"
 dependencies = [
-    "numpy==1.26.4",
+    "numpy>=1.26.4",
     "pandas>=2.2.2",
     "torch>=2.4.0",
     "h5py>=3.11.0",

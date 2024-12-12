@@ -4,6 +4,7 @@ import torch
 import argparse
 from tqdm import tqdm
 from mlpotential.combine import *
+from mlpotential.combine import ChargeCompleteEnsembleModel, ChargeCompleteModel
 from mlpotential.utils import HARTREE_TO_KCALMOL
 
 def get_argument():

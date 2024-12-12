@@ -5,6 +5,7 @@ import argparse
 from tqdm import tqdm
 from mlpotential.dataloader import DataIterator
 from mlpotential.combine import *
+from mlpotential.combine import ChargeCompleteModel, ChargeCompleteEnsembleModel
 
 def get_argument():
     parser = argparse.ArgumentParser()

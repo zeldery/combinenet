@@ -28,8 +28,8 @@ One can install the package using ::
 
 The script in the folder can be used separated with the package available.
 
-Usage
-=====
+Model supported
+===============
 
 The package supports the short-range neural network potential (NNP) with the 
 addition of dispersion correction MLXDM and Charge-Equilibration scheme. All 
@@ -48,8 +48,34 @@ The list of supported models is:
 * ``ChargeDispersionModel`` Charge-equilibration scheme with NNP and MLXDM
 * ``ChargeDispersionEnsembleModel`` Charge-equilibration scheme with Ensemble NNP and MLXDM
 
-The model can be initialized with the explicit declaration of hyper-parameters. See example 
-in ``data_generation.py`` and ``model_init.py`` script.
+The workflow
+============
+
+For all model training, first prepare the data structure using ``dataloader`` module. See ``data_generation.py`` script 
+for example.
+
+1. Short-range model
+
+To train the short-range model, initialize the model by ``model/init.py`` script, train it with ``train/train_energy.py`` 
+or ``train/train_force.py``. For ensemble training, train a number of duplicate model (regenerate each for different initial 
+parameters). Using ``model/merge.py`` to combine.
+
+2. Charge model
+
+To train the charge model, first initialize the charge model by ``model/init.py`` script. Train the charge model with 
+``train/train_charge.py`` script. After that, modifiy the short-range model's mean and generate new data file with 
+``charge_modification.py`` script. After that, train the short-range model with ``train/train_energy.py`` or 
+``train/train_force.py``. Finally, combine the short-range part with the charge using ``model/merge.py`` script.
+
+To utilize ensemble training, train duplicated model in the short-range training, similar to short-range model.
+
+3. Dispersion model
+
+For disperson model, create 4 copies of dipsersion model using ``model/init.py`` script. Train all the models with 
+``train_xdm.py`` script, one each for m1, m2, m3, and v. After that, train the short-range model similar to section 1. 
+then combine the model with ``model/merge.py``
+
+To utilize ensemble training, train duplicated model in the short-range training, similar to short-range model.
 
 Citations
 =========

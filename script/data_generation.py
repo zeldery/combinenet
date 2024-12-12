@@ -14,7 +14,6 @@ def collective_quantity(file_name):
     element_count = {k:[] for k in element_list}
     scanner = H5PyScanner(['atomic_numbers', 'energies'], 'atomic_numbers')
     energies_list = []
-    e_xdm_list = []
     for dat in scanner.scan_individual([file_name]): # Support list of files
         for element in element_list:
             element_count[element].append((np.array(dat['atomic_numbers']) == element).sum())
@@ -23,15 +22,12 @@ def collective_quantity(file_name):
     for element in element_list:
         tmp.append(np.array(element_count[element]))
     x = np.stack(tmp, 1)
-
     print(f'n_structure = {x.shape[0]} n_atoms = {x.sum()}')
-
     energies_model = LinearRegression(fit_intercept=False)
     energies_model.fit(x, energies_list)
     for coef in energies_model.coef_:
         print(coef, end=' ')
     print()
-
 
 def atomic_quantity(file_name):
     element_list = [1,6,7,8]

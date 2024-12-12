@@ -2,13 +2,14 @@
 GENERATE THE MODEL FOR TRAINING
 '''
 
+import torch
+from mlpotential.combine import *
+from mlpotential.sf import SymmetryFunction
+from mlpotential.net import NetworkEnsemble, IndexNetwork, IndexValue
+from mlpotential.dispersion import ExchangeHoleDispersion
+from mlpotential.charge import ChargeEquilibration
 
 def generate_short_range():
-    import torch
-    from mlpotential.net import IndexNetwork
-    from mlpotential.sf import SymmetryFunction
-    from mlpotential.combine import ShortRangeModel
-
     symfunc = SymmetryFunction()
     symfunc.set(4, [16.0], [0.9, 1.16875, 1.4375, 1.70625, 1.975, 2.24375,
                 2.5125, 2.78125, 3.05, 3.31875, 3.5875, 3.85625,
@@ -28,12 +29,6 @@ def generate_short_range():
     model.write('ani_model.pt')
 
 def generate_charge():
-    import torch
-    from mlpotential.sf import SymmetryFunction
-    from mlpotential.net import IndexValue, IndexNetwork
-    from mlpotential.charge import ChargeEquilibration
-    from mlpotential.combine import ChargeModel
-
     symfunc = SymmetryFunction()
     symfunc.set(4, [16.0], [0.9, 1.16875, 1.4375, 1.70625, 1.975, 2.24375,
                 2.5125, 2.78125, 3.05, 3.31875, 3.5875, 3.85625,
@@ -67,12 +62,6 @@ def generate_charge():
 # MLXDM model
 
 def generate_dispersion():
-    import torch
-    from mlpotential.sf import SymmetryFunction
-    from mlpotential.net import IndexNetwork, IndexValue
-    from mlpotential.dispersion import ExchangeHoleDispersion
-    from mlpotential.combine import DispersionModel
-
     symfunc = SymmetryFunction()
     symfunc.set(4, [16.0], [0.9, 1.16875, 1.4375, 1.70625, 1.975, 2.24375,
                 2.5125, 2.78125, 3.05, 3.31875, 3.5875, 3.85625,
@@ -117,8 +106,6 @@ def generate_dispersion():
     xdm_model = ExchangeHoleDispersion()
     xdm_model.set(m1_net, m2_net, m3_net, v_net, v_free, polar_free, [2.6791, 0.4186], 14.0)
 
-    # xdm_model.write('xdm_model.pt')
-
     model = DispersionModel()
     model.set([1,6,7,8], symfunc, xdm_model, short_net)
     model.write('mlxdm_model.pt')
@@ -126,11 +113,6 @@ def generate_dispersion():
 # Short-network ensemble
 
 def generate_short_range_ensemble():
-    import torch
-    from mlpotential.net import IndexNetwork, NetworkEnsemble
-    from mlpotential.sf import SymmetryFunction
-    from mlpotential.combine import ShortRangeEnsembleModel
-
     symfunc = SymmetryFunction()
     symfunc.set(4, [16.0], [0.9, 1.16875, 1.4375, 1.70625, 1.975, 2.24375,
                 2.5125, 2.78125, 3.05, 3.31875, 3.5875, 3.85625,
@@ -158,12 +140,6 @@ def generate_short_range_ensemble():
 # Charge neural network with ensemble
 
 def generate_charge_ensemble():
-    import torch
-    from mlpotential.sf import SymmetryFunction
-    from mlpotential.net import IndexValue, IndexNetwork, NetworkEnsemble
-    from mlpotential.charge import ChargeEquilibration
-    from mlpotential.combine import ChargeEnsembleModel
-
     symfunc = SymmetryFunction()
     symfunc.set(4, [16.0], [0.9, 1.16875, 1.4375, 1.70625, 1.975, 2.24375,
                 2.5125, 2.78125, 3.05, 3.31875, 3.5875, 3.85625,
@@ -201,11 +177,7 @@ def generate_charge_ensemble():
     model.write('runner_ensemble.pt')
 
 def main():
-    generate_short_range()
-    generate_short_range_ensemble()
-    generate_charge()
-    generate_charge_ensemble()
-    generate_dispersion()
+    pass
 
 if __name__ == '__main__':
     main()

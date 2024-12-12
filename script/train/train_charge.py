@@ -23,7 +23,6 @@ def get_argument():
     args = parser.parse_args()
     return args
 
-
 def main():
     args = get_argument()
     model = ChargeModel()

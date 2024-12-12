@@ -158,8 +158,10 @@ class IndexNetwork(nn.Module):
     def dump(self):
         params = {'dimensions': self.dimensions, 'activations': self.activations, 'shifts': self.shifts, 
                   'alphas': self.alphas, 'output_dtype': self.output_dtype, 'sum_up': self.sum_up}
-        weights = self.networks.state_dict()
+        device = self.networks[0].layers[0].weight.device
+        weights = self.networks.to(torch.device('cpu')).state_dict()
         data = {'params': params, 'weights': weights}
+        self.networks.to(device=device)
         return data
     
 

@@ -118,12 +118,7 @@ class SymmetryFunction(nn.Module):
         self.load(state_dict)
     
     def write(self, file_name):
-        if self.radial_eta.device != torch.device('cpu'):
-            temp = self.to(torch.device('cpu'))
-            state_dict = temp.state_dict()
-        else:
-            state_dict = self.state_dict()
-        torch.save(state_dict, file_name)
+        torch.save(self.dump(), file_name)
 
     def load(self, data):
         self.register_buffer('radial_eta', data['radial_eta'])
@@ -138,7 +133,10 @@ class SymmetryFunction(nn.Module):
         self.initialized = True
 
     def dump(self):
-        return self.state_dict()
+        device = self.radial_eta.device
+        state_dict = self.to(torch.device('cpu')).state_dict()
+        self.to(device)
+        return state_dict
     
     def compute(self, atomic_index, positions):
         '''
