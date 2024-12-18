@@ -146,7 +146,7 @@ def charge_dispersion_ensemble(charge_checkfile, m1_checkfile, m2_checkfile, m3_
         nn_list.append(model.neural_network)
     ensemble = NetworkEnsemble()
     ensemble.set(nn_list)
-    new_model = ChargeDispersionModel()
+    new_model = ChargeDispersionEnsembleModel()
     new_model.set(e_model.element_list, e_model.symmetry_function, e_model.charge_model, v_model.dispersion_model, ensemble)
     new_model.write(output)
 
