@@ -44,6 +44,43 @@ class IndexValue(nn.Module):
             output.masked_fill_(mask, self.values[i])
         return output.view(n_structure, n_atoms)
 
+class IndexShift(nn.Module):
+    '''
+    Linear scaled the input value specific to an index
+    '''
+    def __init__(self, shifts, alphas, dtype=torch.float64):
+        super().__init__()
+        if isinstance(shifts, torch.Tensor):
+            self.register_buffer('shifts', shifts)
+        else:
+            self.register_buffer('shifts', torch.tensor(shifts, dtype=dtype))
+        if isinstance(alphas, torch.Tensor):
+            self.register_buffer('alphas', alphas)
+        else:
+            self.register_buffer('alphas', torch.tensor(alphas, dtype=dtype))
+        
+    def compute(self, index, x):
+        n = index.shape[0]
+        s = torch.zeros((n,), dtype=x.dtype, device=x.device)
+        a = torch.zeros((n,), dtype=x.dtype, device=x.device)
+        for i in range(self.shifts.shape[0]):
+            mask = index == i
+            s.masked_fill_(mask, self.shifts[i])
+            a.masked_fill_(mask, self.alphas[i])
+        return s + a*x
+
+    def batch_compute(self, index, x):
+        n_structure, n_atoms = index.shape
+        s = torch.zeros((n_structure*n_atoms,), dtype=x.dtype, device=x.device)
+        a = torch.zeros((n_structure*n_atoms,), dtype=x.dtype, device=x.device)
+        index_flatten = index.flatten()
+        for i in range(self.shifts.shape[0]):
+            mask = index_flatten == i
+            s.masked_fill_(mask, self.shifts[i])
+            a.masked_fill_(mask, self.alphas[i])
+        return s.view(n_structure, n_atoms) + a.view(n_structure, n_atoms) * x
+
+
 class ShiftedNetwork(nn.Module):
     '''
     The feed-forward neural network with output scaled and shifted by a pre-determined value
