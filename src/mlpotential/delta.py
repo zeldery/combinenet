@@ -65,7 +65,7 @@ class DeltaNetwork(nn.Module):
 
 class DeltaEnsemble(nn.Module):
     '''
-    
+    Similar to the delta network, but substitute IndexNetwork to NetworkEnsemble
     '''
     def __init__(self):
         super().__init__()

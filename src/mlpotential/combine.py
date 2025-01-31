@@ -456,5 +456,44 @@ class ChargeDispersionEnsembleModel(ChargeDispersionModel):
                 'charge_model': self.charge_model.dump(), 'dispersion_model': self.dispersion_model.dump(),
                 'short_ensemble': self.short_network.dump()}
 
+class DeltaModel(nn.Module):
+    '''
+    
+    '''
+    def __init__(self):
+        super().__init__()
+
+    def set(self, element_list, symmetry_function, delta_network):
+        self.element_list = element_list.copy()
+        self.symmetry_function = symmetry_function
+        self.delta_network = delta_network
+
+    def compute(self, atomic_numbers, positions, old_data):
+        pass
+
+    def batch_compute(self, atomic_numbers, positions, old_data):
+        pass
+
+    def compute_pbc(self, atomic_numbers, positions, old_data, cell):
+        pass
+
+    def batch_compute_pbc(self, atomic_numbers, positions, old_data, cell):
+        pass
+
+    def load(self, data):
+        pass
+
+    def dump(self):
+        pass
+
+    def read(self, file_name):
+        data = torch.load(file_name, map_location=torch.device('cpu'), weights_only=True)
+        self.load(data)
+
+    def write(self, file_name):
+        data = self.dump()
+        torch.save(data, file_name)
+
+
 __all__ = ['ShortRangeModel', 'ShortRangeEnsembleModel', 'ChargeModel', 'ChargeEnsembleModel', 
            'DispersionModel', 'DispersionEnsembleModel', 'ChargeDispersionModel', 'ChargeDispersionEnsembleModel']

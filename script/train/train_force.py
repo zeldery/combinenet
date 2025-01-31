@@ -15,7 +15,7 @@ def get_argument():
     parser.add_argument('-m', '--model', default='model.pt')
     parser.add_argument('-d', '--data', default='data.hdf5')
     parser.add_argument('-c', '--checkpoint', default='checkpoint.pt')
-    parser.add_argument('-g', '--gpu', default='0')
+    parser.add_argument('-g', '--gpu', default='cpu')
     parser.add_argument('-e', '--epoch', default='100')
     parser.add_argument('-l', '--learningrate', default='0.001')
     parser.add_argument('-f', '--forceratio', default='0.1')
@@ -27,11 +27,9 @@ def main():
     args = get_argument()
     model = ShortRangeModel()
     model.read(args.model)
-    if args.gpu =='0':
-        device = torch.device('cpu')
-    elif args.gpu == '1':
-        device = torch.device('cuda')
-    else:
+    try:
+        device = torch.device(args.gpu)
+    except:
         raise ValueError(f'Unvalid value for gpu argument of {args.gpu}')
     forceratio = torch.tensor(float(args.forceratio), device=device, dtype=torch.float64)
 
