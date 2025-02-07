@@ -5,7 +5,7 @@ Training script for the delta learning
 import argparse
 import torch
 import time
-from mlpotential.delta import *
+from mlpotential.combine import *
 from mlpotential.dataloader import DataIterator
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
@@ -34,10 +34,10 @@ def main():
         raise ValueError(f'Unvalid value for gpu argument of {args.gpu}')
     
     if args.type == 'short':
-        model = DeltaNetwork()
+        model = DeltaModel()
         model.read(args.model)
     elif args.type == 'ensemble':
-        model = DeltaEnsemble()
+        model = DeltaEnsembleModel()
         model.read(args.model)
     else:
         raise ValueError(f'Unvalid value for model type of {args.type}')
@@ -92,7 +92,53 @@ def main():
             positions = batch_data['coordinates'].to(torch.float32).to(device)
             before = batch_data[args.before].to(torch.float64).to(device)
             after = batch_data[args.after].to(torch.float64).to(device)
-            
+            predicted = model.batch_compute(atomic_numbers, positions, before)
+            loss = criterion(predicted, after)
+            loss.backward()
+            optimizer.step()
+        torch.cuda.synchronize()
+        train_time.append(time.time() - begin_time)
+        # Evaluation
+        begin_time = time.time()
+        with torch.no_grad():
+            n_structure = 0
+            total_loss = torch.tensor(0.0, dtype=torch.float64, device=device)
+            for batch_data in loader:
+                atomic_numbers = batch_data['atomic_numbers'].to(torch.int64).to(device)
+                positions = batch_data['coordinates'].to(torch.float32).to(device)
+                before = batch_data[args.before].to(torch.float64).to(device)
+                after = batch_data[args.after].to(torch.float64).to(device)
+                predicted = model.batch_compute(atomic_numbers, positions, before)
+                loss = criterion_eval(predicted, after)
+                n_structure += after.shape[0]
+                total_loss += loss
+            rmse_train.append((total_loss.detach().tolist()/n_structure)**0.5)
+
+            data.mode = 'test'
+            n_structure = 0
+            total_loss = torch.tensor(0.0, dtype=torch.float64, device=device)
+            for batch_data in loader:
+                atomic_numbers = batch_data['atomic_numbers'].to(torch.int64).to(device)
+                positions = batch_data['coordinates'].to(torch.float32).to(device)
+                before = batch_data[args.before].to(torch.float64).to(device)
+                after = batch_data[args.after].to(torch.float64).to(device)
+                predicted = model.batch_compute(atomic_numbers, positions, before)
+                loss = criterion_eval(predicted, after)
+                n_structure += after.shape[0]
+                total_loss += loss
+            scheduler.step(total_loss)
+            rmse_test.append((total_loss.detach().tolist()/n_structure)**0.5)
+        torch.cuda.synchronize()
+        validation_time.append(time.time() - begin_time)
+        if rmse_test[-1] < best_rmse:
+            best_rmse = rmse_test[-1]
+            best_model = model.dump()
+        # Checkpoint
+        save_dict = {'optimizer': optimizer.state_dict(), 'epoch_finished': epoch+1, 
+                     'rmse_train': rmse_train, 'rmse_test': rmse_test,
+                     'train_time': train_time, 'validation_time': validation_time,
+                     'best_rmse': best_rmse, 'current_model': model.dump(), 'best_model': best_model}
+        torch.save(save_dict, args.checkpoint)
 
 if __name__ == '__main__':
     main()

@@ -9,6 +9,7 @@ from .net import IndexNetwork, NetworkEnsemble
 from .sf import SymmetryFunction
 from .charge import ChargeEquilibration, ChargeCompleteEquilibration
 from .dispersion import ExchangeHoleDispersion
+from .delta import DeltaNetwork, DeltaEnsemble
 from .utils import create_element_encoder
 import torch
 from torch import nn
@@ -468,23 +469,34 @@ class DeltaModel(nn.Module):
         self.symmetry_function = symmetry_function
         self.delta_network = delta_network
 
-    def compute(self, atomic_numbers, positions, old_data):
+    def compute(self, atomic_numbers, positions, old):
+        encoder = create_element_encoder(self.element_list)
+        atomic_index = encoder[atomic_numbers]
+        aev = self.symmetry_function.compute(atomic_index, positions)
+        return self.delta_network.compute(atomic_index, aev, old)
+
+    def batch_compute(self, atomic_numbers, positions, old):
+        encoder = create_element_encoder(self.element_list)
+        atomic_index = encoder[atomic_numbers]
+        aev = self.symmetry_function.batch_compute(atomic_index, positions)
+        return self.delta_network.compute(atomic_index, aev, old)
+
+    def compute_pbc(self, atomic_numbers, positions, old, cell):
         pass
 
-    def batch_compute(self, atomic_numbers, positions, old_data):
-        pass
-
-    def compute_pbc(self, atomic_numbers, positions, old_data, cell):
-        pass
-
-    def batch_compute_pbc(self, atomic_numbers, positions, old_data, cell):
+    def batch_compute_pbc(self, atomic_numbers, positions, old, cell):
         pass
 
     def load(self, data):
-        pass
+        self.element_list = data['element_list'].copy()
+        self.symmetry_function = SymmetryFunction()
+        self.symmetry_function.load(data['symmetry_function'])
+        self.delta_network = DeltaNetwork()
+        self.delta_network.load('delta_network')
 
     def dump(self):
-        pass
+        return {'element_list': self.element_list.copy(), 'symmetry_function': self.symmetry_function.dump(),
+                'delta_network': self.delta_network.dump()}
 
     def read(self, file_name):
         data = torch.load(file_name, map_location=torch.device('cpu'), weights_only=True)
@@ -494,6 +506,24 @@ class DeltaModel(nn.Module):
         data = self.dump()
         torch.save(data, file_name)
 
+class DeltaEnsembleModel(DeltaModel):
+    '''
+    
+    '''
+    def __init__(self):
+        super().__init__()
+
+    def load(self, data):
+        self.element_list = data['element_list'].copy()
+        self.symmetry_function = SymmetryFunction()
+        self.symmetry_function.load(data['symmetry_function'])
+        self.delta_network = DeltaEnsemble()
+        self.delta_network.load('delta_ensemble')
+
+    def dump(self):
+        return {'element_list': self.element_list.copy(), 'symmetry_function': self.symmetry_function.dump(),
+                'delta_ensemble': self.delta_network.dump()}
 
 __all__ = ['ShortRangeModel', 'ShortRangeEnsembleModel', 'ChargeModel', 'ChargeEnsembleModel', 
-           'DispersionModel', 'DispersionEnsembleModel', 'ChargeDispersionModel', 'ChargeDispersionEnsembleModel']
+           'DispersionModel', 'DispersionEnsembleModel', 'ChargeDispersionModel', 'ChargeDispersionEnsembleModel',
+           'DeltaModel', 'DeltaEnsembleModel']
