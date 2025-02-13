@@ -459,7 +459,7 @@ class ChargeDispersionEnsembleModel(ChargeDispersionModel):
 
 class DeltaModel(nn.Module):
     '''
-    
+    Delta learning model
     '''
     def __init__(self):
         super().__init__()
@@ -479,7 +479,7 @@ class DeltaModel(nn.Module):
         encoder = create_element_encoder(self.element_list)
         atomic_index = encoder[atomic_numbers]
         aev = self.symmetry_function.batch_compute(atomic_index, positions)
-        return self.delta_network.compute(atomic_index, aev, old)
+        return self.delta_network.batch_compute(atomic_index, aev, old)
 
     def compute_pbc(self, atomic_numbers, positions, old, cell):
         pass
@@ -492,7 +492,7 @@ class DeltaModel(nn.Module):
         self.symmetry_function = SymmetryFunction()
         self.symmetry_function.load(data['symmetry_function'])
         self.delta_network = DeltaNetwork()
-        self.delta_network.load('delta_network')
+        self.delta_network.load(data['delta_network'])
 
     def dump(self):
         return {'element_list': self.element_list.copy(), 'symmetry_function': self.symmetry_function.dump(),
@@ -508,7 +508,7 @@ class DeltaModel(nn.Module):
 
 class DeltaEnsembleModel(DeltaModel):
     '''
-    
+    Similar to delta learning model, but with ensemble
     '''
     def __init__(self):
         super().__init__()
@@ -518,7 +518,7 @@ class DeltaEnsembleModel(DeltaModel):
         self.symmetry_function = SymmetryFunction()
         self.symmetry_function.load(data['symmetry_function'])
         self.delta_network = DeltaEnsemble()
-        self.delta_network.load('delta_ensemble')
+        self.delta_network.load(data['delta_ensemble'])
 
     def dump(self):
         return {'element_list': self.element_list.copy(), 'symmetry_function': self.symmetry_function.dump(),

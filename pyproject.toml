@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 [project]
 name = "mlpotential"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
     "numpy>=1.26.4",
     "pandas>=2.2.2",

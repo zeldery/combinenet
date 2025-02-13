@@ -8,6 +8,7 @@ from mlpotential.sf import SymmetryFunction
 from mlpotential.net import NetworkEnsemble, IndexNetwork, IndexValue
 from mlpotential.dispersion import ExchangeHoleDispersion
 from mlpotential.charge import ChargeEquilibration
+from mlpotential.delta import DeltaNetwork, DeltaEnsemble
 
 def generate_short_range():
     symfunc = SymmetryFunction()
@@ -175,6 +176,52 @@ def generate_charge_ensemble():
     model = ChargeEnsembleModel()
     model.set([1, 6, 7, 8], symfunc, charge_equil, ensemble)
     model.write('runner_ensemble.pt')
+
+def generate_delta():
+    symfunc = SymmetryFunction()
+    symfunc.set(4, [16.0], [0.9, 1.16875, 1.4375, 1.70625, 1.975, 2.24375,
+                2.5125, 2.78125, 3.05, 3.31875, 3.5875, 3.85625,
+                4.125, 4.39375, 4.6625, 4.93125], 5.2,
+                [0.19634954, 0.58904862, 0.9817477, 1.3744468,
+                1.7671459, 2.1598449, 2.552544, 2.9452431],
+                [32.0],  [8.0], [0.9, 1.55, 2.2, 2.85], 3.5)
+    
+    delta_net = DeltaNetwork()
+    delta_net.init([[384, 160, 128, 96, 1], [384, 144, 112, 96, 1], [384, 128, 112, 96, 1], [384, 128, 112, 96, 1]], 
+                   [['celu', 'celu', 'celu', 'celu'], ['celu', 'celu', 'celu', 'celu'], ['celu', 'celu', 'celu', 'celu'], ['celu', 'celu', 'celu', 'celu']], 
+                   [-0.3768090529892555, -1.6998064000502966, -2.3576651708525618, -3.2911943903540903], 
+                   [-0.6002705378749709, -38.06128778326219, -54.68530238634622, -75.16155951592968])
+    
+    model = DeltaModel()
+    model.set([1, 6, 7, 8], symfunc, delta_net)
+    model.write('delta_model.pt')
+
+def generate_delta_ensemble():
+    symfunc = SymmetryFunction()
+    symfunc.set(4, [16.0], [0.9, 1.16875, 1.4375, 1.70625, 1.975, 2.24375,
+                2.5125, 2.78125, 3.05, 3.31875, 3.5875, 3.85625,
+                4.125, 4.39375, 4.6625, 4.93125], 5.2,
+                [0.19634954, 0.58904862, 0.9817477, 1.3744468,
+                1.7671459, 2.1598449, 2.552544, 2.9452431],
+                [32.0],  [8.0], [0.9, 1.55, 2.2, 2.85], 3.5)
+    
+    neural_list = []
+    for _ in range(8):
+        neuralnet = IndexNetwork()
+        neuralnet.init([[384, 160, 128, 96, 1], [384, 144, 112, 96, 1], [384, 128, 112, 96, 1], [384, 128, 112, 96, 1]], \
+                [['celu', 'celu', 'celu', 'celu'], ['celu', 'celu', 'celu', 'celu'], ['celu', 'celu', 'celu', 'celu'], ['celu', 'celu', 'celu', 'celu']], \
+                [0.0, 0.0, 0.0, 0.0], \
+                [1.0, 1.0, 1.0, 1.0], torch.float64, True)
+        neural_list.append(neuralnet)
+
+    delta_ensemble = DeltaEnsemble()
+    delta_ensemble.set(neural_list, 
+                       [-0.3768090529892555, -1.6998064000502966, -2.3576651708525618, -3.2911943903540903],
+                       [-0.6002705378749709, -38.06128778326219, -54.68530238634622, -75.16155951592968])
+
+    model = DeltaEnsembleModel()
+    model.set([1, 6, 7, 8], symfunc, delta_ensemble) 
+    model.write('delta_ensemble.pt')
 
 def main():
     pass

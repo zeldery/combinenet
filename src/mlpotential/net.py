@@ -47,6 +47,7 @@ class IndexValue(nn.Module):
 class IndexShift(nn.Module):
     '''
     Linear scaled the input value specific to an index
+    Currently not in use
     '''
     def __init__(self, shifts, alphas, dtype=torch.float64):
         super().__init__()
@@ -204,7 +205,8 @@ class IndexNetwork(nn.Module):
 
 class NetworkEnsemble(nn.Module):
     '''
-    
+    An ensemble of network
+    Built-in compute, batch_compute and standard deviation computation
     '''
     def __init__(self):
         super().__init__()

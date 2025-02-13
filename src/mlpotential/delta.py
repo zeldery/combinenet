@@ -2,57 +2,42 @@
 Delta learning
 '''
 
-import numpy as np
 import torch
 from torch import nn
-from net import IndexNetwork, IndexShift, NetworkEnsemble
+from .net import IndexNetwork, NetworkEnsemble
 
 class DeltaNetwork(nn.Module):
     '''
-    delta = (y-shift_y)/alpha_y - (x-shift_x)/alpha_x
-    y = shift_y + alpha_y * ((x-shift_x)/alpha_x + delta)
-    y = shift_y + alpha_y * delta + alpha_y/alpha_x * (x-shift_x)
-    y = (shift_y + alpha_y * delta) + ( - alpha_y/alpha_x * shift_x + alpha_y/alpha_x * x)
+    Delta network
+    delta = (output - output_mean) - (input - input_mean)
+    output = input + (output_mean - input_mean) + delta
     '''
     def __init__(self):
         super().__init__()
 
-    def init(self, dimensions, activations, shifts_inp, alphas_inp, shifts_outp, alphas_outp):
+    def init(self, dimensions, activations, shifts_inp, shifts_outp):
         self.shifts_inp = shifts_inp.copy()
-        self.alphas_inp = alphas_inp.copy()
         self.shifts_outp = shifts_outp.copy()
-        self.alphas_outp = alphas_outp.copy()
         self.networks = IndexNetwork()
-        self.networks.init(dimensions, activations, shifts_outp, alphas_outp, torch.float64, False)
-        scaler_alphas = [x/y for x,y in zip(alphas_outp, alphas_inp)]
-        scaler_shifts = [-x*y for x,y in zip(scaler_alphas, shifts_inp)]
-        self.scaler = IndexShift(scaler_shifts, scaler_alphas)
+        shifts = [outp - inp for inp, outp in zip(shifts_inp, shifts_outp)]
+        alphas = [1.0 for _ in shifts_inp]
+        self.networks.init(dimensions, activations, shifts, alphas, torch.float64, True)
 
     def compute(self, index, aev, x):
-        delta = self.networks.compute(index, aev)
-        original = self.scaler.compute(index, x)
-        return delta.sum() + original.sum()
+        return self.networks.compute(index, aev) + x
 
     def batch_compute(self, index, aev, x):
-        delta = self.networks.batch_compute(index, aev)
-        original = self.scaler.batch_compute(index, x)
-        return delta.sum(dim=1) + original.sum(dim=1)
+        return self.networks.batch_compute(index, aev) + x
 
     def load(self, data):
         params = data['params']
         self.shifts_inp = params['shifts_inp'].copy()
-        self.alphas_inp = params['alphas_inp'].copy()
         self.shifts_outp = params['shifts_outp'].copy()
-        self.alphas_outp = params['alphas_outp'].copy()
         self.networks = IndexNetwork()
         self.networks.load(data['networks'])
-        scaler_alphas = [x/y for x,y in zip(self.alphas_outp, self.alphas_inp)]
-        scaler_shifts = [-x*y for x,y in zip(scaler_alphas, self.shifts_inp)]
-        self.scaler = IndexShift(scaler_shifts, scaler_alphas)
 
     def dump(self):
-        params = {'shifts_inp': self.shifts_inp, 'alphas_inp': self.alphas_inp,
-                  'shifts_outp': self.shifts_outp, 'alphas_outp': self.alphas_outp}
+        params = {'shifts_inp': self.shifts_inp, 'shifts_outp': self.shifts_outp}
         return {'params': params, 'networks': self.networks.dump()}
 
     def read(self, file_name):
@@ -65,47 +50,48 @@ class DeltaNetwork(nn.Module):
 
 class DeltaEnsemble(nn.Module):
     '''
-    Similar to the delta network, but substitute IndexNetwork to NetworkEnsemble
+    Similar to the DeltaNetwork, but using NetworkEnsemble instead of IndexNetwork
     '''
     def __init__(self):
         super().__init__()
 
-    def set(self, network_list, shifts_inp, alphas_inp, shifts_outp, alphas_outp):
+    def set(self, network_list, shifts_inp, shifts_outp):
+        '''
+        set will change the shifts and alphas value of individual network
+        '''
         self.shifts_inp = shifts_inp.copy()
-        self.alphas_inp = alphas_inp.copy()
         self.shifts_outp = shifts_outp.copy()
-        self.alphas_outp = alphas_outp.copy()
-        scaler_alphas = [x/y for x,y in zip(alphas_outp, alphas_inp)]
-        scaler_shifts = [-x*y for x,y in zip(scaler_alphas, shifts_inp)]
-        self.scaler = IndexShift(scaler_shifts, scaler_alphas)
+        lst = [network.dump() for network in network_list]
+        shifts = [outp - inp for inp, outp in zip(shifts_inp, shifts_outp)]
+        alphas = [1.0 for _ in shifts_inp]
+        for i in range(len(lst)):
+            lst[i]['params']['shifts'] = shifts.copy()
+            lst[i]['params']['alphas'] = alphas.copy()
+            lst[i]['params']['output_type'] = torch.float64
+            lst[i]['params']['sum_up'] = True
+        network_list_final = []
+        for params in lst:
+            new_network = IndexNetwork()
+            new_network.load(params)
+            network_list_final.append(new_network)
         self.ensemble = NetworkEnsemble()
-        self.ensemble.set(network_list)
-    
+        self.ensemble.set(network_list_final)
+
     def compute(self, index, aev, x):
-        delta = self.ensemble.compute(index, aev)
-        original = self.scaler.compute(index, x)
-        return delta.sum() + original.sum()
+        return self.ensemble.compute(index, aev) + x
 
     def batch_compute(self, index, aev, x):
-        delta = self.ensemble.batch_compute(index, aev)
-        original = self.scaler.batch_compute(index, x)
-        return delta.sum(dim=1) + original.sum(dim=1)
+        return self.ensemble.batch_compute(index, aev) + x
     
     def load(self, data):
         params = data['params']
         self.shifts_inp = params['shifts_inp'].copy()
-        self.alphas_inp = params['alphas_inp'].copy()
         self.shifts_outp = params['shifts_outp'].copy()
-        self.alphas_outp = params['alphas_outp'].copy()
         self.ensemble = NetworkEnsemble()
         self.ensemble.load(data['ensemble'])
-        scaler_alphas = [x/y for x,y in zip(self.alphas_outp, self.alphas_inp)]
-        scaler_shifts = [-x*y for x,y in zip(scaler_alphas, self.shifts_inp)]
-        self.scaler = IndexShift(scaler_shifts, scaler_alphas)
 
     def dump(self):
-        params = {'shifts_inp': self.shifts_inp, 'alphas_inp': self.alphas_inp,
-                  'shifts_outp': self.shifts_outp, 'alphas_outp': self.alphas_outp}
+        params = {'shifts_inp': self.shifts_inp, 'shifts_outp': self.shifts_outp}
         return {'params': params, 'ensemble': self.ensemble.dump()}
 
     def read(self, file_name):

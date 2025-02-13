@@ -74,7 +74,8 @@ def main():
     scheduler = ReduceLROnPlateau(optimizer, factor=0.5, patience=100, threshold=0)
 
     for epoch in range(start_iteration, int(args.epoch)):
-        torch.cuda.synchronize() # For correct time record
+        if args.gpu == 'cuda':
+            torch.cuda.synchronize() # For correct time record
         begin_time = time.time()
         data.mode = 'train'
         for batch_data in loader:
@@ -88,7 +89,8 @@ def main():
             loss = criterion(predicted, charge)
             loss.backward()
             optimizer.step()
-        torch.cuda.synchronize()
+        if args.gpu == 'cuda':
+            torch.cuda.synchronize()
         train_time.append(time.time() - begin_time)
         # Evaluation
         begin_time = time.time()
@@ -124,7 +126,8 @@ def main():
                 total_loss += loss
             scheduler.step(total_loss)
             rmse_test.append((total_loss.detach().tolist()/n_atoms)**0.5)
-        torch.cuda.synchronize()
+        if args.gpu == 'cuda':
+            torch.cuda.synchronize()
         validation_time.append(time.time() - begin_time)
         # Check best model
         if rmse_test[-1] < best_rmse:
