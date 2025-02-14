@@ -470,13 +470,13 @@ class DeltaModel(nn.Module):
         self.delta_network = delta_network
 
     def compute(self, atomic_numbers, positions, old):
-        encoder = create_element_encoder(self.element_list)
+        encoder = create_element_encoder(self.element_list, device=positions.device)
         atomic_index = encoder[atomic_numbers]
         aev = self.symmetry_function.compute(atomic_index, positions)
         return self.delta_network.compute(atomic_index, aev, old)
 
     def batch_compute(self, atomic_numbers, positions, old):
-        encoder = create_element_encoder(self.element_list)
+        encoder = create_element_encoder(self.element_list, device=positions.device)
         atomic_index = encoder[atomic_numbers]
         aev = self.symmetry_function.batch_compute(atomic_index, positions)
         return self.delta_network.batch_compute(atomic_index, aev, old)
