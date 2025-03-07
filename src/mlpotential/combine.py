@@ -524,6 +524,8 @@ class DeltaEnsembleModel(DeltaModel):
         return {'element_list': self.element_list.copy(), 'symmetry_function': self.symmetry_function.dump(),
                 'delta_ensemble': self.delta_network.dump()}
 
-__all__ = ['ShortRangeModel', 'ShortRangeEnsembleModel', 'ChargeModel', 'ChargeEnsembleModel', 
-           'DispersionModel', 'DispersionEnsembleModel', 'ChargeDispersionModel', 'ChargeDispersionEnsembleModel',
+__all__ = ['ShortRangeModel', 'ShortRangeEnsembleModel', 
+           'ChargeModel', 'ChargeEnsembleModel', 
+           'DispersionModel', 'DispersionEnsembleModel',
+           'ChargeDispersionModel', 'ChargeDispersionEnsembleModel',
            'DeltaModel', 'DeltaEnsembleModel']
