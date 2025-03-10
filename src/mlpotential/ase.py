@@ -11,9 +11,12 @@ class ASECalculator(BaseCalculator):
     '''
     
     '''
-    def __init__(self, model):
+    def __init__(self, model, device=torch.device('cpu')):
         super().__init__()
+        self.device = device
         self.model = model
+        self.element_list = self.model.element_list.copy()
+        self.model = self.model.to(device=device)
 
     def calculate(self, atoms, properties, system_changes):
         super().calculate(atoms, properties, system_changes)
@@ -40,3 +43,5 @@ class ASECalculator(BaseCalculator):
             forces = - torch.autograd.grad(energies, positions)[0]
             self.results['forces'] = forces.detach().cpu().numpy() * HARTREE_TO_EV
         
+        if 'charges' in properties:
+            pass

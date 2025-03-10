@@ -6,7 +6,7 @@ Link: https://aiqm.github.io/torchani/
 
 import torch
 from torch import nn
-from .utils import cumsum_from_zero, create_double_index, create_double_index_batch
+from .utils import cumsum_from_zero, create_double_index, create_double_index_batch, compute_half_shift
 
 def cut_off_function(x, cut_off):
     '''
@@ -169,7 +169,7 @@ class SymmetryFunction(nn.Module):
         # Getting the vector by the pair_index
         pair_vector = vector.index_select(0, pair_index.view(-1)).view(2, -1, 3)
         pair_vector = pair_vector * torch.where(flip, -1.0, 1.0).unsqueeze(-1) # Make sure it has correct direction
-        # Get the atomic numbers of NOT the central atoms in the triple
+        # Get the atomic index of NOT the central atoms in the triple
         # Use for new_pair_index
         closer_atomic_index = atomic_index[index].index_select(1, pair_index.view(-1)).view(2, -1)
         other_atomic_index = torch.where(flip.view(-1), closer_atomic_index[0], closer_atomic_index[1]).view(2, -1)
@@ -218,7 +218,7 @@ class SymmetryFunction(nn.Module):
         # Getting the vector by the pair_index
         pair_vector = vector.index_select(0, pair_index.view(-1)).view(2, -1, 3)
         pair_vector = pair_vector * torch.where(flip, -1.0, 1.0).unsqueeze(-1) # Make sure it has correct direction
-        # Get the atomic numbers of NOT the central atoms in the triple
+        # Get the atomic index of NOT the central atoms in the triple
         # Use for new_pair_index
         closer_atomic_index = atomic_index[index].index_select(1, pair_index.view(-1)).view(2, -1)
         other_atomic_index = torch.where(flip.view(-1), closer_atomic_index[0], closer_atomic_index[1]).view(2, -1)
@@ -236,9 +236,84 @@ class SymmetryFunction(nn.Module):
 
     def compute_pbc(self, atomic_index, positions, cell):
         '''
-        Not implemented yet
+        Compute the symmetry function within the unit cell
+        Has to be extended system for all 3 dimensions
         '''
-        pass
+        n_element = self.n_elements.item()
+        n_atoms = atomic_index.shape[0]
+        device = positions.device
+        
+        # Radial part
+
+        # The interaction inside of the cell
+        index_inside = torch.triu_indices(n_atoms, n_atoms, 1, device=device)
+        vector_inside = positions[index_inside[1,:],:] - positions[index_inside[0,:],:]
+
+        # The cell expansion
+        cell_expansion = compute_half_shift(cell, self.radial_cut_off)
+        shifts_outside = torch.matmul(cell_expansion.to(torch.float32), cell)
+        n_shifts = shifts_outside.shape[0]
+
+        # The interaction between inside and outside        
+        index_outside = torch.triu_indices(n_atoms, n_atoms, device=device)
+        vector_outside = positions[index_outside[1,:],:] - positions[index_outside[0,:],:]
+        vector_outside = vector_outside.unsqueeze(0).repeat((n_shifts,1,1)) # For the addition between pair of atoms and the cell shifts
+        index_outside = index_outside.repeat((1, n_shifts))
+        vector_outside = (vector_outside + shifts_outside.unsqueeze(1)).flatten(end_dim=1) # The vector will repeat in the first dimension
+                                                                                           # The cell expansion will repeat in the second
+                                                                                           # So that the vector will run in the second dimension
+                                                                                           # And the cell expansion on the first
+                                                                                           # The flatten will in the order of
+                                                                                           # [[cell shift 1st] [cell shift 2nd] ...]
+        
+        # Combine all interactions
+        vector = torch.concatenate([vector_inside, vector_outside], dim=0)
+        index = torch.concatenate([index_inside, index_outside], dim=1)
+        distance = vector.norm(2, -1)
+        
+        # Eliminate all interaction further than cut-off
+        mask = (distance.detach() <  self.radial_cut_off).nonzero().flatten()
+        index = index.index_select(1, mask)
+        vector = vector.index_select(0, mask)
+        distance = distance.index_select(0, mask)
+
+        # Calculate radial terms
+        radial_term = compute_radial_function(distance, self.radial_eta, self.radial_mu, self.radial_cut_off)
+        radial_aev = radial_term.new_zeros((n_atoms * n_element, radial_term.shape[1]))
+        # See compute comment of new_index order
+        new_index = index * n_element + atomic_index[index].flip(0)
+        radial_aev.index_add_(0, new_index[0], radial_term)
+        radial_aev.index_add_(0, new_index[1], radial_term)
+
+        # Angular part
+        # Similar to compute
+
+        # Elminate the one which further the angular cut-off
+        closer_index = (distance.detach() < self.angular_cut_off).nonzero().flatten()
+        index = index.index_select(1, closer_index)
+        vector = vector.index_select(0, closer_index)
+        distance = distance.index_select(0, closer_index)
+        
+        # Get the index for all the pair of vector
+        central_atom, pair_index, flip = create_triple_index(index)
+        pair_vector = vector.index_select(0, pair_index.view(-1)).view(2, -1, 3)
+        pair_vector = pair_vector * torch.where(flip, -1.0, 1.0).unsqueeze(-1)
+        closer_atomic_index = atomic_index[index].index_select(1, pair_index.view(-1)).view(2, -1)
+        other_atomic_index = torch.where(flip.view(-1), closer_atomic_index[0], closer_atomic_index[1]).view(2, -1)
+
+        # Angular terms
+        angular_term = compute_angular_function(pair_vector, distance.index_select(0, pair_index.view(-1)).view(2, -1), 
+                                                self.angular_nu, self.angular_zeta, self.angular_eta, self.angular_mu, self.angular_cut_off)
+        n_element_pair = n_element * (n_element+1)//2
+        angular_aev = angular_term.new_zeros((n_atoms*n_element_pair, angular_term.shape[1]))
+        pairwise_encoder = create_pairwise_encoder(self.n_elements).to(positions.device)
+        new_pair_index = central_atom * n_element_pair + pairwise_encoder[other_atomic_index[0], other_atomic_index[1]]
+        angular_aev.index_add_(0, new_pair_index, angular_term)
+        
+        # Concat the results
+        return torch.cat([radial_aev.view(n_atoms, -1), angular_aev.view(n_atoms, -1)], dim=-1)
+
+
 
     def batch_compute_pbc(self, atomic_index, positions, cell):
         '''
