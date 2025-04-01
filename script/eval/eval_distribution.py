@@ -1,8 +1,8 @@
 import argparse
 import torch
 from tqdm import tqdm
-from mlpotential.combine import *
-from mlpotential.dataloader import DataIterator
+from combinenet.combine import *
+from combinenet.dataloader import DataIterator
 
 def get_argument():
     parser = argparse.ArgumentParser('distribution')
@@ -23,10 +23,6 @@ def main():
         model = ChargeModel()
     elif args.type == 'charge_ensemble':
         model = ChargeEnsembleModel()
-    elif args.type == 'charge_complete':
-        model = ChargeCompleteModel()
-    elif args.type == 'charge_complete_ensemble':
-        model = ChargeCompleteEnsembleModel()
     elif args.type == 'dispersion':
         model = DispersionModel()
     elif args.type == 'dispersion_ensemble':

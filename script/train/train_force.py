@@ -5,8 +5,8 @@ Train the neural network potential using both the energy and the force
 import torch
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import argparse
-from mlpotential.dataloader import DataIterator
-from mlpotential.combine import ShortRangeModel
+from combinenet.dataloader import DataIterator
+from combinenet.combine import ShortRangeModel
 import time
 
 def get_argument():

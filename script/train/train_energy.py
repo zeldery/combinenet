@@ -4,9 +4,9 @@ Train the short-range
 
 import torch
 import argparse
-from mlpotential.dataloader import DataIterator
+from combinenet.dataloader import DataIterator
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from mlpotential.combine import ShortRangeModel
+from combinenet.combine import ShortRangeModel
 import time
 
 def get_argument():

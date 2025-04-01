@@ -3,9 +3,8 @@ import pandas as pd
 import torch
 import argparse
 from tqdm import tqdm
-from mlpotential.combine import *
-from mlpotential.combine import ChargeCompleteEnsembleModel, ChargeCompleteModel
-from mlpotential.utils import HARTREE_TO_KCALMOL
+from combinenet.combine import *
+from combinenet.utils import HARTREE_TO_KCALMOL
 
 def get_argument():
     parser = argparse.ArgumentParser('evaluation')
@@ -34,10 +33,6 @@ def main():
         model = ChargeModel()
     elif args.type == 'charge_ensemble':
         model = ChargeEnsembleModel()
-    elif args.type == 'charge_complete':
-        model = ChargeCompleteModel()
-    elif args.type == 'charge_complete_ensemble':
-        model = ChargeCompleteEnsembleModel()
     elif args.type == 'dispersion':
         model = DispersionModel()
     elif args.type == 'dispersion_ensemble':

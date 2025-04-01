@@ -5,8 +5,8 @@ Training script for the delta learning
 import argparse
 import torch
 import time
-from mlpotential.combine import *
-from mlpotential.dataloader import DataIterator
+from combinenet.combine import *
+from combinenet.dataloader import DataIterator
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 

@@ -3,8 +3,8 @@ import pandas as pd
 import torch
 import argparse
 from tqdm import tqdm
-from mlpotential.combine import *
-from mlpotential.utils import HARTREE_TO_KCALMOL
+from combinenet.combine import *
+from combinenet.utils import HARTREE_TO_KCALMOL
 
 def get_argument():
     parser = argparse.ArgumentParser('evaluation')

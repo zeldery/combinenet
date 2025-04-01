@@ -4,8 +4,8 @@ Train the xdm components
 
 import torch
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from mlpotential.dataloader import DataIterator
-from mlpotential.combine import DispersionModel
+from combinenet.dataloader import DataIterator
+from combinenet.combine import DispersionModel
 import argparse
 import time
 

@@ -1,6 +1,6 @@
 import torch
-from mlpotential.combine import *
-from mlpotential.net import NetworkEnsemble
+from combinenet.combine import *
+from combinenet.net import NetworkEnsemble
 
 def short_ensemble(checkfile_list, output):
     nn_list = []

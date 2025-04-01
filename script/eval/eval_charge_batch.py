@@ -3,8 +3,8 @@ import pandas as pd
 import torch
 import argparse
 from tqdm import tqdm
-from mlpotential.dataloader import DataIterator
-from mlpotential.combine import *
+from combinenet.dataloader import DataIterator
+from combinenet.combine import *
 
 def get_argument():
     parser = argparse.ArgumentParser()
@@ -25,10 +25,6 @@ def main():
         model = ChargeModel()
     elif args.type == 'charge_ensemble':
         model = ChargeEnsembleModel()
-    elif args.type == 'charge_complete':
-        model = ChargeCompleteModel()
-    elif args.type == 'charge_complete_ensemble':
-        model = ChargeCompleteEnsembleModel()
     elif args.type == 'charge_dispersion':
         model = ChargeDispersionModel()
     elif args.type == 'charge_dispersion_ensemble':

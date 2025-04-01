@@ -3,12 +3,12 @@ GENERATE THE MODEL FOR TRAINING
 '''
 
 import torch
-from mlpotential.combine import *
-from mlpotential.sf import SymmetryFunction
-from mlpotential.net import NetworkEnsemble, IndexNetwork, IndexValue
-from mlpotential.dispersion import ExchangeHoleDispersion
-from mlpotential.charge import ChargeEquilibration
-from mlpotential.delta import DeltaNetwork, DeltaEnsemble
+from combinenet.combine import *
+from combinenet.sf import SymmetryFunction
+from combinenet.net import NetworkEnsemble, IndexNetwork, IndexValue
+from combinenet.dispersion import ExchangeHoleDispersion
+from combinenet.charge import ChargeEquilibration
+from combinenet.delta import DeltaNetwork, DeltaEnsemble
 
 def generate_short_range():
     symfunc = SymmetryFunction()

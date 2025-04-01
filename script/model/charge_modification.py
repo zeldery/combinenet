@@ -1,11 +1,11 @@
-from mlpotential.combine import *
+from combinenet.combine import *
 import torch
-from mlpotential.dataloader import DataIterator
+from combinenet.dataloader import DataIterator
 from sklearn.linear_model import LinearRegression
 import argparse
 import numpy as np
 
-from mlpotential.combine import ChargeModel, ChargeEnsembleModel, ChargeCompleteModel, ChargeCompleteEnsembleModel
+from combinenet.combine import ChargeModel, ChargeEnsembleModel, ChargeCompleteModel, ChargeCompleteEnsembleModel
 import h5py
 from tqdm import tqdm
 

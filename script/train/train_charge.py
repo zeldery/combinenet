@@ -5,8 +5,8 @@ Mimic RuNNer model
 
 import torch
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from mlpotential.dataloader import DataIterator
-from mlpotential.combine import ChargeModel
+from combinenet.dataloader import DataIterator
+from combinenet.combine import ChargeModel
 import argparse
 import time
 

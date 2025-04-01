@@ -3,8 +3,8 @@ import pandas as pd
 import torch
 import argparse
 from tqdm import tqdm
-from mlpotential.dataloader import DataIterator
-from mlpotential.combine import *
+from combinenet.dataloader import DataIterator
+from combinenet.combine import *
 
 def get_argument():
     parser = argparse.ArgumentParser()

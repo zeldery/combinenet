@@ -2,8 +2,8 @@
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 [project]
-name = "mlpotential"
-version = "0.2.3"
+name = "combinenet"
+version = "1.0.0"
 dependencies = [
     "numpy>=1.26.4",
     "pandas>=2.2.2",
@@ -20,7 +20,7 @@ authors = [
 description = ""
 readme = "README.rst"
 license = {file = "LICENSE"}
-keywords = ["machine learning", "MLP"]
+keywords = ["machine learning", "MLP", "neural network potential", "NNP"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}

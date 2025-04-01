@@ -3,7 +3,7 @@ CALCULATE THE QUANTITY FOR INIT THE MODEL
 GENERATE THE BATCH DATA FOR TRAINING
 '''
 
-from mlpotential.dataloader import H5PyScanner
+from combinenet.dataloader import H5PyScanner
 from sklearn.linear_model import LinearRegression
 import numpy as np
 
