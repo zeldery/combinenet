@@ -1,5 +1,5 @@
 ==================================
-Machine Learning Potential package
+CombineNet - Machine Learning Potential package
 ==================================
 
 The package is used to create and test the machine learning potential (MLP), especially 
@@ -35,7 +35,7 @@ The package supports the short-range neural network potential (NNP) with the
 addition of dispersion correction MLXDM and Charge-Equilibration scheme. All 
 models are included in combine files, and can be imported as ::
 
-    from mlpotential.combine import *
+    from combinenet.combine import *
 
 The list of supported models is:
 
@@ -47,6 +47,17 @@ The list of supported models is:
 * ``DispersionEnsembleModel`` Ensemble of NNP with MLXDM
 * ``ChargeDispersionModel`` Charge-equilibration scheme with NNP and MLXDM
 * ``ChargeDispersionEnsembleModel`` Charge-equilibration scheme with Ensemble NNP and MLXDM
+
+Pretrained models
+=================
+
+Pretrained models can be found in the pretrained folder. To load the model, import 
+the correct model from ``combinenet.combine`` and use ``read`` to load the model.
+For example: ::
+
+    from combinenet.combine import ChargeEnsembleModel
+    model = ChargeEnsembleModel()
+    model.read('pretrained/NNP-ensemble.pt')
 
 The workflow
 ============

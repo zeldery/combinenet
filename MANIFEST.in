@@ -3,8 +3,11 @@ graft src
 
 include script/train/*
 include script/eval/*
+include script/model/*
 include script/*.py
 
 include MANIFEST.in
 include LICENSE
 include README.rst
+
+recursive-exclude pretrained
