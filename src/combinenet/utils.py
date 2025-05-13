@@ -23,6 +23,13 @@ AMU_TO_KG = 1.660539040e-27
 
 ELECTRIC_CONSTANT_ANGSTROM_TO_KCALMOL = HARTREE_TO_KCALMOL * BOHR_TO_ANGSTROM
 
+# Element encoding
+
+ELEMENT_DICTIONARY = {1: 'H', 2: 'He',
+                      3: 'Li', 4: 'Be', 5: 'B', 6: 'C', 7: 'N', 8: 'O', 9: 'F', 10: 'Ne' ,
+                      11: 'Na', 12: 'Mg', 13: 'Al', 14: 'Si', 15: 'P', 16: 'S', 17: 'Cl', 18: 'Ar'}
+
+
 # Commonly used function
 
 def compute_shift_expansion(cell, cut_off):
