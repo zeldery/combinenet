@@ -339,3 +339,4 @@ class ChargeCompleteEquilibration(ChargeEquilibration):
         sigma = self.sigma.batch_compute(index)
         electronegativity = self.neuralnetworks.batch_compute(index, aev)
         return compute_charge_equilibration_complete_batch(index, positions, hardness, electronegativity, sigma, total_charge)
+    

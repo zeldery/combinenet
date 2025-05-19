@@ -314,7 +314,6 @@ class SymmetryFunction(nn.Module):
         return torch.cat([radial_aev.view(n_atoms, -1), angular_aev.view(n_atoms, -1)], dim=-1)
 
 
-
     def batch_compute_pbc(self, atomic_index, positions, cell):
         '''
         Not implemented yet

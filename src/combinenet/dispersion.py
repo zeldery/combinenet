@@ -5,7 +5,7 @@ Exchange-hole Dispersion Model
 import torch
 from torch import nn
 from .net import IndexValue, IndexNetwork
-from .utils import create_double_index, create_double_index_batch, BOHR_TO_ANGSTROM
+from .utils import create_double_index, create_double_index_batch, compute_shift, BOHR_TO_ANGSTROM
 
 def dispersion_cut_off(distance, cut_off):
     '''
@@ -142,7 +142,56 @@ class ExchangeHoleDispersion(nn.Module):
         return energy_6_batch + energy_8_batch + energy_10_batch
 
     def compute_pbc(self, atomic_index, aev, positions, cell):
-        pass
+        m1 = self.m1_net.compute(atomic_index, aev)
+        m2 = self.m2_net.compute(atomic_index, aev)
+        m3 = self.m3_net.compute(atomic_index, aev)
+        v = self.v_net.compute(atomic_index, aev)
+        v_free = self.v_free.compute(atomic_index)
+        polar_free = self.polar_free.compute(atomic_index)
+        polar = polar_free * v / v_free
+
+        index_inside = create_double_index(positions, self.cut_off)
+        vector_inside = positions[index_inside[1,:],:] - positions[index_inside[0,:],:]
+
+        cell_expansion = compute_shift(cell, self.cut_off)
+        shifts_outside = torch.matmul(cell_expansion.to(torch.float32), cell)
+        n_shifts = shifts_outside.shape[0]
+
+        n_atoms = atomic_index.shape[0]
+        index_outside = torch.triu_indices(n_atoms, n_atoms, device=aev.device)
+        vector_outside = positions[index_outside[1,:],:] - positions[index_outside[0,:],:]
+        vector_outside = vector_outside.unsqueeze(0).repeat((n_shifts,1,1))
+        index_outside = index_outside.repeat((1,n_shifts))
+        vector_outside = (vector_outside + shifts_outside.unsqueeze(1)).flatten(end_dim=1)
+        
+        vector = torch.concatenate([vector_inside, vector_outside], dim=0)
+        index = torch.concatenate([index_inside, index_outside], dim=1)
+        
+        # Reduce the interaction below cut-off distance
+        distance = vector.norm(2,1)
+        mask = (distance.detach() < self.cut_off).nonzero().flatten() # No gradient through mask
+        index = index.index_select(1, mask)
+        vector = vector.index_select(0, mask)
+        distance = distance.index_select(0, mask)
+
+        m1_pair = m1.index_select(0, index.view(-1)).view(2, -1)
+        m2_pair = m2.index_select(0, index.view(-1)).view(2, -1)
+        m3_pair = m3.index_select(0, index.view(-1)).view(2, -1)
+        polar_pair = polar.index_select(0, index.view(-1)).view(2, -1)
+        scaled_m1 = m1_pair[0,:] / polar_pair[0,:] + m1_pair[1,:] / polar_pair[1,:]
+        c6 = m1_pair[0,:] * m1_pair[1,:] / scaled_m1
+        c8 = 1.5 * (m1_pair[0,:]*m2_pair[1,:] + m2_pair[0,:]*m1_pair[1,:]) / scaled_m1
+        c10 = 2 * (m1_pair[0,:] * m3_pair[1,:] + m3_pair[0,:] * m1_pair[1,:] + \
+                   2.1 * m2_pair[0,:] * m2_pair[1,:]) / scaled_m1
+        r_critical = ((c8/c6)**0.5 + (c10/c6)**0.25 + (c10/c8)**0.5) / 3
+        r_vdw = self.critical_values[0] + self.critical_values[1] * r_critical * BOHR_TO_ANGSTROM
+                                                # Critical value is listed in Angstrom, but r_critical is bohr, the rvdw is in Angstrom
+        cut_off_value = dispersion_cut_off(distance, self.cut_off)
+        # The energy has the inclusion of damping function already
+        energy_6 = -c6 / (distance ** 6 + r_vdw ** 6) * cut_off_value * BOHR_TO_ANGSTROM**6 # Change the distance unit from angstrom to bohr
+        energy_8 = -c8 / (distance ** 8 + r_vdw ** 6) * cut_off_value * BOHR_TO_ANGSTROM**8
+        energy_10 = -c10 / (distance ** 10 + r_vdw ** 10) * cut_off_value * BOHR_TO_ANGSTROM**10
+        return energy_6.sum() + energy_8.sum() + energy_10.sum()
 
     def batch_compute_pbc(self, atomic_index, aev, positions, cell):
         pass

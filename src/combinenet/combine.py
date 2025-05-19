@@ -57,10 +57,13 @@ class ShortRangeModel(nn.Module):
         return self.neural_network.batch_compute(atomic_index, aev)
 
     def compute_pbc(self, atomic_numbers, positions, cell):
-        pass
+        encoder = create_element_encoder(self.element_list, device=positions.device)
+        atomic_index = encoder[atomic_numbers]
+        aev = self.symmetry_function.compute_pbc(atomic_index, positions, cell)
+        return self.neural_network.compute(atomic_index, aev)
 
     def batch_compute_pbc(self, atomic_numbers, positions, cell):
-        pass
+        raise NotImplementedError('Not implement batch pbc yet')
 
 class ShortRangeEnsembleModel(ShortRangeModel):
     '''
@@ -250,10 +253,14 @@ class DispersionModel(nn.Module):
                 + self.short_network.batch_compute(atomic_index, aev)
 
     def compute_pbc(self, atomic_numbers, positions, cell):
-        pass
+        encoder = create_element_encoder(self.element_list, device=positions.device)
+        atomic_index = encoder[atomic_numbers]
+        aev = self.symmetry_function.compute_pbc(atomic_index, positions, cell)
+        return self.dispersion_model.compute_pbc(atomic_index, aev, positions, cell) \
+                + self.short_network.compute(atomic_index, aev)
 
     def batch_compute_pbc(self, atomic_numbers, positions, cell):
-        pass
+        raise NotImplementedError('Not implement batch pbc yet')
 
     def compute_short(self, atomic_numbers, positions):
         encoder = create_element_encoder(self.element_list, device=positions.device)
@@ -266,6 +273,15 @@ class DispersionModel(nn.Module):
         atomic_index = encoder[atomic_numbers]
         aev = self.symmetry_function.batch_compute(atomic_index, positions)
         return self.short_network.batch_compute(atomic_index, aev)
+    
+    def compute_short_pbc(self, atomic_numbers, positions, cell):
+        encoder = create_element_encoder(self.element_list, device=positions.device)
+        atomic_index = encoder[atomic_numbers]
+        aev = self.symmetry_function.compute_pbc(atomic_index, positions, cell)
+        return self.short_network.compute_pbc(atomic_index, aev)
+    
+    def batch_compute_short_pbc(self, atomic_numbers, positions, cell):
+        raise NotImplementedError('Not implement batch pbc yet')
 
     def compute_dispersion(self, atomic_numbers, positions):
         encoder = create_element_encoder(self.element_list, device=positions.device)
@@ -278,6 +294,15 @@ class DispersionModel(nn.Module):
         atomic_index = encoder[atomic_numbers]
         aev = self.symmetry_function.batch_compute(atomic_index, positions)
         return self.dispersion_model.batch_compute(atomic_index, aev, positions)
+
+    def compute_dispersion_pbc(self, atomic_numbers, positions, cell):
+        encoder = create_element_encoder(self.element_list, device=positions.device)
+        atomic_index = encoder[atomic_numbers]
+        aev = self.symmetry_function.compute_pbc(atomic_index, positions, cell)
+        return self.dispersion_model.compute_pbc(atomic_index, aev, positions, cell)
+
+    def batch_compute_dispersion_pbc(self, atomic_numbers, positions, cell):
+        raise NotImplementedError('Not implement batch pbc yet')
 
     def compute_m1(self, atomic_numbers, positions):
         encoder = create_element_encoder(self.element_list, device=positions.device)
@@ -326,6 +351,30 @@ class DispersionModel(nn.Module):
         atomic_index = encoder[atomic_numbers]
         aev = self.symmetry_function.batch_compute(atomic_index, positions)
         return self.dispersion_model.v_net.batch_compute(atomic_index, aev)
+
+    def compute_m1_pbc(self, atomic_numbers, positions, cell):
+        encoder = create_element_encoder(self.element_list, device=positions.device)
+        atomic_index = encoder[atomic_numbers]
+        aev = self.symmetry_function.compute_pbc(atomic_index, positions, cell)
+        return self.dispersion_model.m1_net.compute(atomic_index, aev)
+
+    def compute_m2_pbc(self, atomic_numbers, positions, cell):
+        encoder = create_element_encoder(self.element_list, device=positions.device)
+        atomic_index = encoder[atomic_numbers]
+        aev = self.symmetry_function.compute_pbc(atomic_index, positions, cell)
+        return self.dispersion_model.m2_net.compute(atomic_index, aev)
+
+    def compute_m3_pbc(self, atomic_numbers, positions, cell):
+        encoder = create_element_encoder(self.element_list, device=positions.device)
+        atomic_index = encoder[atomic_numbers]
+        aev = self.symmetry_function.compute_pbc(atomic_index, positions, cell)
+        return self.dispersion_model.m3_net.compute(atomic_index, aev)
+
+    def compute_v_pbc(self, atomic_numbers, positions, cell):
+        encoder = create_element_encoder(self.element_list, device=positions.device)
+        atomic_index = encoder[atomic_numbers]
+        aev = self.symmetry_function.compute_pbc(atomic_index, positions, cell)
+        return self.dispersion_model.v_net.compute(atomic_index, aev)
 
     def load(self, data):
         self.element_list = data['element_list'].copy()
@@ -403,13 +452,7 @@ class ChargeDispersionModel(nn.Module):
         dispersion_energy = self.dispersion_model.batch_compute(atomic_index, aev, positions)
         short_energy = self.short_network.batch_compute(atomic_index, aev)
         return short_energy + dispersion_energy + charge_energy
-
-    def compute_pbc(self, atomic_numbers, positions, cell):
-        pass
-
-    def batch_compute_pbc(self, atomic_numbers, positions, cell):
-        pass
-
+    
     def load(self, data):
         self.element_list = data['element_list'].copy()
         self.symmetry_function = SymmetryFunction()
@@ -482,10 +525,13 @@ class DeltaModel(nn.Module):
         return self.delta_network.batch_compute(atomic_index, aev, old)
 
     def compute_pbc(self, atomic_numbers, positions, old, cell):
-        pass
+        encoder = create_element_encoder(self.element_list, device=positions.device)
+        atomic_index = encoder[atomic_numbers]
+        aev = self.symmetry_function.compute_pbc(atomic_index, positions, cell)
+        return self.delta_network.compute(atomic_index, aev, old)
 
     def batch_compute_pbc(self, atomic_numbers, positions, old, cell):
-        pass
+        raise NotImplementedError('Not implement batch pbc yet')
 
     def load(self, data):
         self.element_list = data['element_list'].copy()
