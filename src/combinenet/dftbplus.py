@@ -54,7 +54,7 @@ class DFTBPlusRunner:
     MaxAngularMomentum = { 
 ''')
             for symbol in lst_elements:
-                f.write(f'{ANGULAR_MOMENTUM[symbol]}\n') ## FIXXING 
+                f.write(f'{ANGULAR_MOMENTUM_MAXIMUM[symbol]}\n') ## FIXXING 
             f.write('''
 }
  
