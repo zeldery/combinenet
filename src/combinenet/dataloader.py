@@ -121,7 +121,8 @@ class H5PyScanner:
             for field in self.field_list:
                 pad_value = 0.0
                 if isinstance(storage[field], np.ndarray):
-                    if storage[field].dtype == np.int32 or storage[field].dtype == np.int64:
+                    if storage[field].dtype in (np.int8, np.uint8, np.int16, np.uint16, np.int32, np.uint32, 
+                                                np.int64, np.uint64, np.int128, np.uint128, np.int256, np.uint256):
                         pad_value = -1
                 result[field] = self.stack_(storage[field], pad_value)
                 storage[field] = []
