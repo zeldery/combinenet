@@ -52,7 +52,7 @@ class ShortRangeModel(nn.Module):
     
     def batch_compute(self, atomic_numbers, positions):
         encoder = create_element_encoder(self.element_list, device=positions.device)
-        atomic_index = encoder.index_select(0, atomic_numbers.view(-1)).view(atomic_numbers.shape[0], atomic_numbers.shape[1])
+        atomic_index = encoder[atomic_numbers.view(-1)].view(atomic_numbers.shape[0], atomic_numbers.shape[1])
         aev = self.symmetry_function.batch_compute(atomic_index, positions)
         return self.neural_network.batch_compute(atomic_index, aev)
 
@@ -109,7 +109,7 @@ class ChargeModel(nn.Module):
         encoder = create_element_encoder(self.element_list, device=positions.device)
         if total_charge is None:
             total_charge = torch.zeros(atomic_numbers.shape[0], dtype=torch.float32, device=positions.device)
-        atomic_index = encoder.index_select(0, atomic_numbers.view(-1)).view(atomic_numbers.shape[0], atomic_numbers.shape[1])
+        atomic_index = encoder[atomic_numbers.view(-1)].view(atomic_numbers.shape[0], atomic_numbers.shape[1])
         aev = self.symmetry_function.batch_compute(atomic_index, positions)
         charge, _ = self.charge_model.batch_compute(atomic_index, aev, positions, total_charge)
         return charge
@@ -127,7 +127,7 @@ class ChargeModel(nn.Module):
         encoder = create_element_encoder(self.element_list, device=positions.device)
         if total_charge is None:
             total_charge = torch.zeros(atomic_numbers.shape[0], dtype=torch.float32, device=positions.device)
-        atomic_index = encoder.index_select(0, atomic_numbers.view(-1)).view(atomic_numbers.shape[0], atomic_numbers.shape[1])
+        atomic_index = encoder[atomic_numbers.view(-1)].view(atomic_numbers.shape[0], atomic_numbers.shape[1])
         aev = self.symmetry_function.batch_compute(atomic_index, positions)
         _ , energies = self.charge_model.batch_compute(atomic_index, aev, positions, total_charge)
         return energies
@@ -146,7 +146,7 @@ class ChargeModel(nn.Module):
         encoder = create_element_encoder(self.element_list, device=positions.device)
         if total_charge is None:
             total_charge = torch.zeros(atomic_numbers.shape[0], dtype=torch.float32, device=positions.device)
-        atomic_index = encoder.index_select(0, atomic_numbers.view(-1)).view(atomic_numbers.shape[0], atomic_numbers.shape[1])
+        atomic_index = encoder[atomic_numbers.view(-1)].view(atomic_numbers.shape[0], atomic_numbers.shape[1])
         aev = self.symmetry_function.batch_compute(atomic_index, positions)
         _ , charge_energy = self.charge_model.batch_compute(atomic_index, aev, positions, total_charge)
         short_energy = self.short_network.batch_compute(atomic_index, aev)

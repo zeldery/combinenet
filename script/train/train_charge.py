@@ -140,6 +140,6 @@ def main():
                      'best_rmse': best_rmse, 'current_model': model.dump(), 'best_model': best_model}
         torch.save(save_dict, args.checkpoint)
 
-if __name__ == '__mEain__':
+if __name__ == '__main__':
     main()
 
