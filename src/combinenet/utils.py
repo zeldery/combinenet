@@ -6,6 +6,8 @@ import torch
 
 # Conversion
 
+PI = torch.pi
+
 PLANCK_CONSTANT = 6.62607015e-34
 ELEMENTARY_CHARGE = 1.602176634e-19
 BOLTZMANN_CONSTANT = 1.380649e-23
@@ -13,10 +15,15 @@ AVOGADRO_CONSTANT = 6.02214076e23
 SPEED_OF_LIGHT = 2.99792458e8
 
 KCAL_TO_JOULE = 4.184e3
-PI = torch.pi
+JOULE_TO_KCAL = 1/KCAL_TO_JOULE
 
-HARTREE_TO_KCALMOL = 4.3597447222060e-18 * AVOGADRO_CONSTANT / KCAL_TO_JOULE
-HARTREE_TO_EV = 4.3597447222060e-18 / ELEMENTARY_CHARGE
+HARTREE_TO_JOULE = 4.3597447222060e-18
+HARTREE_TO_KCALMOL = HARTREE_TO_JOULE * AVOGADRO_CONSTANT / KCAL_TO_JOULE
+KCALMOL_TO_HARTREE = 1/HARTREE_TO_KCALMOL
+HARTREE_TO_EV = HARTREE_TO_JOULE / ELEMENTARY_CHARGE
+EV_TO_HARTREE = 1/HARTREE_TO_EV
+EV_TO_KCALMOL = EV_TO_HARTREE*HARTREE_TO_KCALMOL
+
 BOHR_TO_ANGSTROM = 0.529177210545
 ANGSTROM_TO_BOHR = 1 / BOHR_TO_ANGSTROM
 AMU_TO_KG = 1.660539040e-27
@@ -46,6 +53,7 @@ def compute_half_shift(cell, cut_off):
     Compute all the shift possible given the cell and cut_off
     Similar to TorchANI, except eliminate the pbc
     For symmetry function computation
+    For pairwise interaction of inside and outside the box of pbc (avoid double counting)
     '''
     n_expansion = compute_shift_expansion(cell, cut_off)
     r1 = torch.arange(1, n_expansion[0].item() + 1, device=cell.device)
@@ -71,7 +79,6 @@ def compute_half_shift(cell, cut_off):
 def compute_shift(cell, cut_off):
     '''
     Similar to compute shift half, but expanded for all the image cell
-    For the energy interaction
     '''
     n_expansion = compute_shift_expansion(cell, cut_off)
     r1 = torch.arange(1, n_expansion[0].item() + 1, device=cell.device)

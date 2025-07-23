@@ -5,7 +5,7 @@ Exchange-hole Dispersion Model
 import torch
 from torch import nn
 from .net import IndexValue, IndexNetwork
-from .utils import create_double_index, create_double_index_batch, compute_shift, BOHR_TO_ANGSTROM
+from .utils import create_double_index, create_double_index_batch, compute_half_shift, BOHR_TO_ANGSTROM
 
 def dispersion_cut_off(distance, cut_off):
     '''
@@ -153,7 +153,7 @@ class ExchangeHoleDispersion(nn.Module):
         index_inside = create_double_index(positions, self.cut_off)
         vector_inside = positions[index_inside[1,:],:] - positions[index_inside[0,:],:]
 
-        cell_expansion = compute_shift(cell, self.cut_off)
+        cell_expansion = compute_half_shift(cell, self.cut_off)
         shifts_outside = torch.matmul(cell_expansion.to(torch.float32), cell)
         n_shifts = shifts_outside.shape[0]
 
@@ -192,9 +192,6 @@ class ExchangeHoleDispersion(nn.Module):
         energy_8 = -c8 / (distance ** 8 + r_vdw ** 6) * cut_off_value * BOHR_TO_ANGSTROM**8
         energy_10 = -c10 / (distance ** 10 + r_vdw ** 10) * cut_off_value * BOHR_TO_ANGSTROM**10
         return energy_6.sum() + energy_8.sum() + energy_10.sum()
-
-    def batch_compute_pbc(self, atomic_index, aev, positions, cell):
-        pass
 
     
 
