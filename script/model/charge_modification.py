@@ -17,7 +17,7 @@ def get_argument():
     parser.add_argument('-d', '--data', default='data.hdf5')
     parser.add_argument('-o', '--output_model', default='output_model.pt')
     parser.add_argument('-u', '--output_data', default='data_substract.hdf5')
-    parser.add_argument('-g', '--gpu', default='0')
+    parser.add_argument('-g', '--gpu', default='cpu')
     args = parser.parse_args()
     return args
 
@@ -32,11 +32,9 @@ def substract_energy(model_type, model_name, data_name, output, gpu='0'):
         model = ChargeCompleteEnsembleModel()
     model.read(model_name)
     inp = h5py.File(data_name, 'r')
-    if gpu =='0':
-        device = torch.device('cpu')
-    elif gpu == '1':
-        device = torch.device('cuda')
-    else:
+    try:
+        device = torch.device(gpu)
+    except:
         raise ValueError(f'Unvalid value for gpu argument of {gpu}')
     model = model.to(device)
     outp = h5py.File(output, 'w')
@@ -77,7 +75,7 @@ def substract_energy(model_type, model_name, data_name, output, gpu='0'):
     inp.close()
     outp.close()
 
-def change_mean(model_type, model_name, data_name, output, gpu='0'):
+def change_mean(model_type, model_name, data_name, output):
     if model_type == 'charge':
         model = ChargeModel()
         new_model = ChargeModel()
@@ -129,7 +127,7 @@ def change_mean(model_type, model_name, data_name, output, gpu='0'):
 def main():
     args = get_argument()
     substract_energy(args.type, args.model, args.data, args.output_data, args.gpu)
-    change_mean(args.type, args.model, args.output_data, args.output_model, args.gpu)
+    change_mean(args.type, args.model, args.output_data, args.output_model)
 
 if __name__ == '__main__':
     main()

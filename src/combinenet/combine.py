@@ -500,23 +500,32 @@ class DeltaModel(nn.Module):
         self.symmetry_function = symmetry_function
         self.delta_network = delta_network
 
-    def compute(self, atomic_numbers, positions, old):
+    def compute(self, atomic_numbers, positions, old=None):
         encoder = create_element_encoder(self.element_list, device=positions.device)
         atomic_index = encoder[atomic_numbers]
         aev = self.symmetry_function.compute(atomic_index, positions)
-        return self.delta_network.compute(atomic_index, aev, old)
+        if old is None:
+            return self.delta_network.compute(atomic_index, aev, torch.zeros(1, dtype=torch.float64))
+        else:
+            return self.delta_network.compute(atomic_index, aev, old)
 
-    def batch_compute(self, atomic_numbers, positions, old):
+    def batch_compute(self, atomic_numbers, positions, old=None):
         encoder = create_element_encoder(self.element_list, device=positions.device)
         atomic_index = encoder[atomic_numbers]
         aev = self.symmetry_function.batch_compute(atomic_index, positions)
-        return self.delta_network.batch_compute(atomic_index, aev, old)
+        if old is None:
+            return self.delta_network.batch_compute(atomic_index, aev, torch.zeros(atomic_numbers.shape[0], dtype=torch.float64))
+        else:
+            return self.delta_network.batch_compute(atomic_index, aev, old)
 
-    def compute_pbc(self, atomic_numbers, positions, old, cell):
+    def compute_pbc(self, atomic_numbers, positions, cell, old=None):
         encoder = create_element_encoder(self.element_list, device=positions.device)
         atomic_index = encoder[atomic_numbers]
         aev = self.symmetry_function.compute_pbc(atomic_index, positions, cell)
-        return self.delta_network.compute(atomic_index, aev, old)
+        if old is None:
+            return self.delta_network.compute(atomic_index, aev, torch.zeros(1, dtype=torch.float64))
+        else:
+            return self.delta_network.compute(atomic_index, aev, old)
 
     def load(self, data):
         self.element_list = data['element_list'].copy()
@@ -536,6 +545,8 @@ class DeltaModel(nn.Module):
     def write(self, file_name):
         data = self.dump()
         torch.save(data, file_name)
+
+
 
 class DeltaEnsembleModel(DeltaModel):
     '''

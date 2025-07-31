@@ -416,4 +416,5 @@ class H5PyAnalyzedScanner:
                 dest.create_dataset(f'train/{train_current}/{property}',\
                                     data=np.stack(train_batch[property], axis=0))
         dest.close()
-        
+
+__all__ = ['H5PyScanner', 'DataIterator']

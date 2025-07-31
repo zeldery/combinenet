@@ -3,10 +3,11 @@ Interface with dftbplus
 Only work on Linux/MacOS
 '''
 
-from utils import ELEMENT_DICTIONARY
+from .utils import ELEMENT_DICTIONARY
 import os
 
 ANGULAR_MOMENTUM_MAXIMUM = {'H': 'H = "s"', 'C':'C = "p"', 'N':'N = "p"', 'O':'O = "p"'}
+HUBBARD_DERIVS = {'H': 'H = -0.1857', 'C':'C = -0.1492', 'N':'N = -0.1535', 'O':'O = -0.1575'}
 
 class DFTBPlusRunner:
     def __init__(self, run_directory, slater_koster_path, run_command):
@@ -37,6 +38,9 @@ class DFTBPlusRunner:
             f.write('}\n')
             f.write('''Hamiltonian = DFTB {
     SCC = Yes
+    Filling = Fermi {
+        Temperature [K] = 400
+    }
     SlaterKosterFiles = Type2FileNames {
 ''')
             f.write(f'        Prefix = "{self.slater_koster_path}"')
@@ -44,18 +48,22 @@ class DFTBPlusRunner:
         Separator = "-"                     # Dash between type names
         Suffix = ".skf"                     # Suffix after second type name
     }
-    RangeSeparated = LC {
-        Screening = MatrixBased { }
-    }
-    SCCTolerance = 1.0E-008  # Extremely small
+    SCCTolerance = 1.0E-009  # Extremely small
     MaxSCCIterations = 1000
-    Mixer = Broyden { }
+    HCorrection = Damping { Exponent = 4.00 }
+    ThirdOrderFull = Yes
 
     MaxAngularMomentum = { 
 ''')
             for symbol in lst_elements:
-                f.write(f'{ANGULAR_MOMENTUM_MAXIMUM[symbol]}\n') ## FIXXING 
-            f.write('''
+                f.write(f'        {ANGULAR_MOMENTUM_MAXIMUM[symbol]}\n')
+            f.write('''    }
+    HubbardDerivs{
+''')
+            for symbol in lst_elements:
+                f.write(f'        {HUBBARD_DERIVS[symbol]}\n')                
+            f.write('''    }
+                    
 }
  
 Options = {
@@ -71,7 +79,13 @@ ParserOptions = {
 }
 
 ''')
+        # Auto close the file
         os.system(self.run_command)
-        # CONTINUE HERE
-
+        with open('detailed.out', 'r') as f:
+            lines = f.readlines()
+            for line in lines:
+                if 'Total energy:' in line:
+                    data = float(line.split()[2])
+                    break
         os.chdir(path)
+        return data # Return 

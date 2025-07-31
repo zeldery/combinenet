@@ -11,7 +11,7 @@ def get_argument():
     parser.add_argument('-m', '--model')
     parser.add_argument('-t', '--type', default='short')
     parser.add_argument('-d', '--data')
-    parser.add_argument('-g', '--gpu', default='0')
+    parser.add_argument('-g', '--gpu', default='cpu')
     parser.add_argument('-n', '--fieldname', default='delta_E')
     parser.add_argument('-o', '--output', default='output.csv')
     args = parser.parse_args()
@@ -19,12 +19,10 @@ def get_argument():
 
 def main():
     args = get_argument()
-    if args.gpu == '0':
-        device = torch.device('cpu')
-    elif args.gpu == '1':
-        device = torch.device('cuda')
-    else:
-        raise ValueError(f'Invalid gpu {args.gpu}')
+    try:
+        device = torch.device(args.gpu)
+    except:
+        raise ValueError(f'Unvalid value for gpu argument of {args.gpu}')
     if args.type == 'short':
         model = ShortRangeModel()
     elif args.type == 'short_ensemble':

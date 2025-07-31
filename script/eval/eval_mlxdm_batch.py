@@ -13,7 +13,7 @@ def get_argument():
     parser.add_argument('-p', '--type', default='dispersion')
     parser.add_argument('-e', '--element')
     parser.add_argument('-d', '--data', default='data.h5')
-    parser.add_argument('-g', '--gpu', default='0')
+    parser.add_argument('-g', '--gpu', default='cpu')
     parser.add_argument('-o', '--output', default='output.csv')
     args = parser.parse_args()
     return args
@@ -43,12 +43,11 @@ def main():
         raise ValueError(f'Incorrect type {args.type}')
     model.read(args.model)
     element = int(args.element)
-    if args.gpu == '0':
-        device = torch.device('cpu')
-    elif args.gpu == '1':
-        device = torch.device('cuda')
-    else:
-        raise ValueError(f'Invalid gpu argument {args.gpu}')
+    try:
+        device = torch.device(args.gpu)
+    except:
+        raise ValueError(f'Unvalid value for gpu argument of {args.gpu}')
+    
     model = model.to(device)
     scanner.mode = 'all'
     total_atoms = 0
