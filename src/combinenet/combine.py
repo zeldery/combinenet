@@ -495,17 +495,22 @@ class DeltaModel(nn.Module):
     def __init__(self):
         super().__init__()
 
-    def set(self, element_list, symmetry_function, delta_network):
+    def set(self, element_list, symmetry_function, delta_network, runner=None):
         self.element_list = element_list.copy()
         self.symmetry_function = symmetry_function
         self.delta_network = delta_network
+        self.runner = runner
 
     def compute(self, atomic_numbers, positions, old=None):
         encoder = create_element_encoder(self.element_list, device=positions.device)
         atomic_index = encoder[atomic_numbers]
         aev = self.symmetry_function.compute(atomic_index, positions)
-        if old is None:
+        if old is None and self.runner is None:
             return self.delta_network.compute(atomic_index, aev, torch.zeros(1, dtype=torch.float64))
+        elif old is None:
+            old = self.runner.run(atomic_numbers.detach().cpu().numpy(), positions.detach().cpu().numpy())
+            old = torch.tensor(old, dtype=torch.float64)
+            return self.delta_network.compute(atomic_index, aev, old)
         else:
             return self.delta_network.compute(atomic_index, aev, old)
 
@@ -533,6 +538,7 @@ class DeltaModel(nn.Module):
         self.symmetry_function.load(data['symmetry_function'])
         self.delta_network = DeltaNetwork()
         self.delta_network.load(data['delta_network'])
+        self.runner = None
 
     def dump(self):
         return {'element_list': self.element_list.copy(), 'symmetry_function': self.symmetry_function.dump(),

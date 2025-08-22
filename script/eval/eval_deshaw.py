@@ -39,6 +39,10 @@ def main():
         model = ChargeDispersionModel()
     elif args.type == 'charge_dispersion_ensemble':
         model = ChargeDispersionEnsembleModel()
+    elif args.type == 'delta':
+        model = DeltaModel()
+    elif args.type == 'delta_ensemble':
+        model = DeltaEnsembleModel()
     else:
         raise ValueError(f'Incorrect type {args.type}')
     model.read(args.model)
