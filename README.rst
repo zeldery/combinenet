@@ -93,7 +93,9 @@ Citations
 
 When using the package or script, please cite:
 
-1. Tu NTP, Knoll A, Behler J, Rowley C. Long-Range Interactions in High-Dimensional Neural Network Potentials: A Benchmark Study for  Small Organic Molecules. ChemRxiv. 2025; doi:10.26434/chemrxiv-2025-qt1rr  This content is a preprint and has not been peer-reviewed.
+1. Tu NTP, Knoll A, Behler J, Rowley C. Long-Range Interactions in High-Dimensional Neural Network Potentials: 
+A Benchmark Study for  Small Organic Molecules. ChemRxiv. 2025; doi:10.26434/chemrxiv-2025-qt1rr 
+This content is a preprint and has not been peer-reviewed.
 
 2. Tu, N. T. P.; Rezajooei, N.; Johnson, E. R.; Rowley, C. N. A Neural Network Potential with 
 Rigorous Treatment of Long-Range Dispersion. Digital Discovery 2023, 2 (3), 718–727. 
