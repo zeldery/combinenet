@@ -552,8 +552,6 @@ class DeltaModel(nn.Module):
         data = self.dump()
         torch.save(data, file_name)
 
-
-
 class DeltaEnsembleModel(DeltaModel):
     '''
     Similar to delta learning model, but with ensemble
@@ -571,6 +569,80 @@ class DeltaEnsembleModel(DeltaModel):
     def dump(self):
         return {'element_list': self.element_list.copy(), 'symmetry_function': self.symmetry_function.dump(),
                 'delta_ensemble': self.delta_network.dump()}
+
+
+class DeltaDispersionModel(nn.Module):
+    '''
+    Delta model with dispersion
+    '''
+    def __init__(self):
+        super().__init__()
+
+    def set(self, element_list, symmetry_function, delta_network, dispersion_model, runner=None):
+        self.element_list = element_list.copy()
+        self.symmetry_function = symmetry_function
+        self.delta_network = delta_network
+        self.dispersion_model = dispersion_model
+        self.runner = runner
+
+    def compute(self, atomic_numbers, positions, old=None):
+        encoder = create_element_encoder(self.element_list, device=positions.device)
+        atomic_index = encoder[atomic_numbers]
+        aev = self.symmetry_function.compute(atomic_index, positions)
+        dispersion = self.dispersion_model.compute(atomic_index, aev, positions)
+        if old is None and self.runner is None:
+            return self.delta_network.compute(atomic_index, aev, torch.zeros(1, dtype=torch.float64)) + dispersion
+        elif old is None:
+            old = self.runner.run(atomic_numbers.detach().cpu().numpy(), positions.detach().cpu().numpy())
+            old = torch.tensor(old, dtype=torch.float64)
+            return self.delta_network.compute(atomic_index, aev, old) + dispersion
+        else:
+            return self.delta_network.compute(atomic_index, aev, old) + dispersion
+
+    def compute_pbc(self, atomic_numbers, positions, cell, old=None):
+        encoder = create_element_encoder(self.element_list, device=positions.device)
+        atomic_index = encoder[atomic_numbers]
+        aev = self.symmetry_function.compute_pbc(atomic_index, positions, cell)
+        dispersion = self.dispersion_model.compute_pbc(atomic_index, aev, positions)
+        if old is None:
+            return self.delta_network.compute(atomic_index, aev, torch.zeros(1, dtype=torch.float64)) + dispersion
+        else:
+            return self.delta_network.compute(atomic_index, aev, old) + dispersion
+
+    def compute_delta(self, atomic_numbers, positions, old=None):
+        encoder = create_element_encoder(self.element_list, device=positions.device)
+        atomic_index = encoder[atomic_numbers]
+        aev = self.symmetry_function.compute(atomic_index, positions)
+        if old is None and self.runner is None:
+            return self.delta_network.compute(atomic_index, aev, torch.zeros(1, dtype=torch.float64))
+        elif old is None:
+            old = self.runner.run(atomic_numbers.detach().cpu().numpy(), positions.detach().cpu().numpy())
+            old = torch.tensor(old, dtype=torch.float64)
+            return self.delta_network.compute(atomic_index, aev, old)
+        else:
+            return self.delta_network.compute(atomic_index, aev, old)
+
+    def compute_delta_pbc(self, atomic_numbers, positions, cell, old=None):
+        encoder = create_element_encoder(self.element_list, device=positions.device)
+        atomic_index = encoder[atomic_numbers]
+        aev = self.symmetry_function.compute_pbc(atomic_index, positions, cell)
+        if old is None:
+            return self.delta_network.compute(atomic_index, aev, torch.zeros(1, dtype=torch.float64))
+        else:
+            return self.delta_network.compute(atomic_index, aev, old)
+
+    def compute_dispersion(self, atomic_numbers, positions):
+        encoder = create_element_encoder(self.element_list, device=positions.device)
+        atomic_index = encoder[atomic_numbers]
+        aev = self.symmetry_function.compute(atomic_index, positions)
+        return self.dispersion_model.compute(atomic_index, aev, positions)
+
+    def compute_dispersion_pbc(self, atomic_numbers, positions, cell):
+        encoder = create_element_encoder(self.element_list, device=positions.device)
+        atomic_index = encoder[atomic_numbers]
+        aev = self.symmetry_function.compute_pbc(atomic_index, positions, cell)
+        return self.dispersion_model.compute_pbc(atomic_index, aev, positions, cell)
+
 
 __all__ = ['ShortRangeModel', 'ShortRangeEnsembleModel', 
            'ChargeModel', 'ChargeEnsembleModel', 
