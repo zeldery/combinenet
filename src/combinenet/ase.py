@@ -2,6 +2,7 @@
 Interface with ASE package
 '''
 
+import numpy as np
 import torch
 from ase.calculators.calculator import Calculator as BaseCalculator
 from .utils import HARTREE_TO_EV
@@ -23,11 +24,16 @@ class ASECalculator(BaseCalculator):
         # All the information needed in atoms
         # All the things need to calculate in properties
 
-        # CHANGE THIS WHEN IMPLEMENT PBC IN THE MODEL
-        if atoms.get_pbc().any():
-            raise NotImplementedError('Have not implement pbc yet')
+        if atoms.get_pbc().any() and (not atoms.get_pbc().all()):
+            raise NotImplementedError('Have not implement 1D and 2D periodic')
         atomic_numbers = atoms.get_atomic_numbers()
         positions = atoms.get_positions()
+        is_pbc = atoms.get_pbc().any()
+        if is_pbc:
+            cell = torch.tensor(np.array(atoms.get_cell(complete=True)), dtype=torch.float32, device=self.device)
+            if 'stress' in properties:
+                scaling = torch.eye(3, requires_grad=True, dtype=torch.float32, device=self.device)
+                volume = self.atoms.get_volume()
         
         atomic_numbers = torch.tensor(atomic_numbers, dtype=torch.int64, device=self.device)
         if 'forces' in properties:
@@ -35,12 +41,18 @@ class ASECalculator(BaseCalculator):
         else:
             positions = torch.tensor(positions, dtype=torch.float32, device=self.device)
 
-        energies = self.model.compute(atomic_numbers, positions)
+        if 'stress' in properties:
+            cell = torch.matmul(cell, scaling)
+
+        if is_pbc:
+            energy = self.model.compute_pbc(atomic_numbers, positions, cell)
+        else:
+            energy = self.model.compute(atomic_numbers, positions)
         
-        self.results['energy'] = energies.detach().cpu().item() * HARTREE_TO_EV
+        self.results['energy'] = energy.detach().cpu().item() * HARTREE_TO_EV
 
         if 'forces' in properties:
-            forces = - torch.autograd.grad(energies, positions)[0]
+            forces = - torch.autograd.grad(energy, positions)[0]
             self.results['forces'] = forces.detach().cpu().numpy() * HARTREE_TO_EV
         
         if 'charges' in properties:
@@ -48,13 +60,7 @@ class ASECalculator(BaseCalculator):
             self.results['charges'] = charges.detach().cpu().numpy()
         
         if 'stress' in properties:
-            raise NotImplementedError('Have not implement pbc yet')
+            stress = torch.autograd.grad(energy, scaling)[0] / volume
+            self.results['stress'] = stress.cpu().numpy()
         
-'''
-scaling = torch.eye(3, requires_grad=True, dtype=torch.float32, device=self.device)
-cell = torch.matmul(cell, scaling)
-volume = self.atoms.get_volume()
-stress = torch.autograd.grad(energy.squeeze(), scaling)[0] / volume
-self.results['stress'] = stress.cpu().numpy()
-'''
 

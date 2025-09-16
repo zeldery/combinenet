@@ -6,3 +6,5 @@ from . import net
 from . import sf
 from . import utils
 from . import delta
+
+__version__ = '1.2.0'
