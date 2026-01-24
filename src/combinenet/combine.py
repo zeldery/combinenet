@@ -508,7 +508,7 @@ class DeltaModel(nn.Module):
         if old is None and self.runner is None:
             return self.delta_network.compute(atomic_index, aev, torch.zeros(1, dtype=torch.float64))
         elif old is None:
-            old = self.runner.run(atomic_numbers.detach().cpu().numpy(), positions.detach().cpu().numpy())
+            old, _ = self.runner.run(atomic_numbers.detach().cpu().numpy(), positions.detach().cpu().numpy())
             old = torch.tensor(old, dtype=torch.float64)
             return self.delta_network.compute(atomic_index, aev, old)
         else:
