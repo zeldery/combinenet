@@ -119,10 +119,10 @@ class ASEDeltaCalculator(BaseCalculator):
                 self.results['energy'] = (energy + delta_e.detach().cpu().item()) * HARTREE_TO_EV
         else:
             if is_force:
-                delta_e = self.model.compute_pbc(atomic_numbers, positions)
+                delta_e = self.model.compute(atomic_numbers, positions)
                 delta_f = -torch.autograd.grad(delta_e, positions)[0]
                 self.results['energy'] = (energy + delta_e.detach().cpu().item()) * HARTREE_TO_EV
                 self.results['forces'] = (forces + delta_f.detach().cpu().numpy()) * HARTREE_TO_EV
             else:
-                delta_e = self.model.compute_pbc(atomic_numbers, positions)
+                delta_e = self.model.compute(atomic_numbers, positions)
                 self.results['energy'] = (energy + delta_e.detach().cpu().item()) * HARTREE_TO_EV

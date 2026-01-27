@@ -71,6 +71,10 @@ Options = {
 Analysis {
   CalculateForces = Yes
 }
+  
+Parallel {
+  UseOmpThreads = Yes                   
+}                   
 
 ParserOptions = {
   ParserVersion = 5
@@ -143,6 +147,10 @@ Options = {
 
 Analysis {
   CalculateForces = Yes
+}
+                   
+Parallel {
+  UseOmpThreads = Yes                   
 }
 
 ParserOptions = {
