@@ -46,7 +46,7 @@ class DFTBPlusRunner:
         Separator = "-"                     # Dash between type names
         Suffix = ".skf"                     # Suffix after second type name
     }
-    SCCTolerance = 1.0E-009  # Extremely small
+    SCCTolerance = 1.0E-007  # Extremely small
     MaxSCCIterations = 1000
     HCorrection = Damping { Exponent = 4.00 }
     ThirdOrderFull = Yes
@@ -116,7 +116,7 @@ ParserOptions = {
         Separator = "-"                     # Dash between type names
         Suffix = ".skf"                     # Suffix after second type name
     }
-    SCCTolerance = 1.0E-009  # Extremely small
+    SCCTolerance = 1.0E-007  # Extremely small
     MaxSCCIterations = 1000
     HCorrection = Damping { Exponent = 4.00 }
     ThirdOrderFull = Yes
