@@ -506,7 +506,7 @@ class DeltaModel(nn.Module):
         atomic_index = encoder[atomic_numbers]
         aev = self.symmetry_function.compute(atomic_index, positions)
         if old is None and self.runner is None:
-            return self.delta_network.compute(atomic_index, aev, torch.zeros(1, dtype=torch.float64))
+            return self.delta_network.compute(atomic_index, aev, torch.zeros(1, dtype=torch.float64, device=positions.device))
         elif old is None:
             old, _ = self.runner.run(atomic_numbers.detach().cpu().numpy(), positions.detach().cpu().numpy())
             old = torch.tensor(old, dtype=torch.float64)
@@ -519,7 +519,7 @@ class DeltaModel(nn.Module):
         atomic_index = encoder[atomic_numbers]
         aev = self.symmetry_function.batch_compute(atomic_index, positions)
         if old is None:
-            return self.delta_network.batch_compute(atomic_index, aev, torch.zeros(atomic_numbers.shape[0], dtype=torch.float64))
+            return self.delta_network.batch_compute(atomic_index, aev, torch.zeros(atomic_numbers.shape[0], dtype=torch.float64, device=positions.device))
         else:
             return self.delta_network.batch_compute(atomic_index, aev, old)
 
@@ -528,7 +528,7 @@ class DeltaModel(nn.Module):
         atomic_index = encoder[atomic_numbers]
         aev = self.symmetry_function.compute_pbc(atomic_index, positions, cell)
         if old is None:
-            return self.delta_network.compute(atomic_index, aev, torch.zeros(1, dtype=torch.float64))
+            return self.delta_network.compute(atomic_index, aev, torch.zeros(1, dtype=torch.float64, device=positions.device))
         else:
             return self.delta_network.compute(atomic_index, aev, old)
 

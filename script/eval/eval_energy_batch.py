@@ -24,6 +24,10 @@ def main():
         model = ShortRangeModel()
     elif args.type == 'short_ensemble':
         model = ShortRangeEnsembleModel()
+    elif args.type == 'delta':
+        model = DeltaModel()
+    elif args.type == 'delta_ensemble':
+        model = DeltaEnsembleModel()
     elif args.type == 'charge':
         model = ChargeModel()
     elif args.type == 'charge_ensemble':

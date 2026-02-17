@@ -9,4 +9,4 @@ from . import delta
 from . import ase
 from . import dftbplus
 
-__version__ = '1.3.0'
+__version__ = '1.3.1'

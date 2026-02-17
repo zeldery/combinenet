@@ -1,6 +1,7 @@
 import torch
 from combinenet.combine import *
 from combinenet.net import NetworkEnsemble
+from combinenet.delta import DeltaEnsemble
 
 def short_ensemble(checkfile_list, output):
     nn_list = []
@@ -12,6 +13,19 @@ def short_ensemble(checkfile_list, output):
     ensemble = NetworkEnsemble()
     ensemble.set(nn_list)
     new_model = ShortRangeEnsembleModel()
+    new_model.set(model.element_list, model.symmetry_function, ensemble)
+    new_model.write(output)
+
+def delta_ensemble(checkfile_list, output):
+    nn_list = []
+    for name in checkfile_list:
+        chk = torch.load(name, map_location='cpu', weights_only=True)
+        model = DeltaModel()
+        model.load(chk['best_model'])
+        nn_list.append(model.delta_network.networks)
+    ensemble = DeltaEnsemble()
+    ensemble.set(nn_list, model.delta_network.shifts_inp, model.delta_network.shifts_outp)
+    new_model = DeltaEnsembleModel()
     new_model.set(model.element_list, model.symmetry_function, ensemble)
     new_model.write(output)
 
