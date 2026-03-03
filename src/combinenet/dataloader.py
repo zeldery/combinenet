@@ -156,6 +156,88 @@ class H5PyScanner:
                 n_train += 1
         file.close()
 
+    def generate_iterator_2(self, list_file_name, n_batch, output_name, testratio):
+        '''
+        
+        '''
+        file = h5py.File(output_name, 'w')
+        file.create_group('train')
+        file.create_group('test')
+        n_train = 0
+        n_test = 0
+        n_count_train = 0
+        n_count_test = 0
+        storage_train = {}
+        storage_test = {}
+        for field in self.field_list:
+            storage_train[field] = []
+            storage_test[field] = []
+        for dat in self.scan_individual(list_file_name):
+            if random.random() < testratio:
+                # Test part
+                n_count_test += 1
+                for field in self.field_list:
+                    storage_test[field].append(dat[field])
+                if n_count_test == n_batch:
+                    file.create_group(f'test/{n_test}')
+                    for field in self.field_list:
+                        pad_value = 0.0
+                        if isinstance(storage_test[field][0], np.ndarray):
+                            if storage_test[field][0].dtype in (np.int8, np.uint8, np.int16, np.uint16, np.int32, np.uint32, 
+                                                        np.int64, np.uint64):
+                                pad_value = -1
+                                for i in range(len(storage_test[field])):
+                                    storage_test[field][i] = storage_test[field][i].astype(np.int64)
+                        output = self.stack_(storage_test[field], pad_value)
+                        file.create_dataset(f'test/{n_test}/{field}', data=output)
+                        storage_test[field] = []
+                    n_count_test = 0
+                    n_test += 1
+            else:
+                # Train part
+                n_count_train += 1
+                for field in self.field_list:
+                    storage_train[field].append(dat[field])
+                if n_count_train == n_batch:
+                    file.create_group(f'train/{n_train}')
+                    for field in self.field_list:
+                        pad_value = 0.0
+                        if isinstance(storage_train[field][0], np.ndarray):
+                            if storage_train[field][0].dtype in (np.int8, np.uint8, np.int16, np.uint16, np.int32, np.uint32, 
+                                                        np.int64, np.uint64):
+                                pad_value = -1
+                                for i in range(len(storage_train[field])):
+                                    storage_train[field][i] = storage_train[field][i].astype(np.int64)
+                        output = self.stack_(storage_train[field], pad_value)
+                        file.create_dataset(f'train/{n_train}/{field}', data=output)
+                        storage_train[field] = []
+                    n_count_train = 0
+                    n_train += 1
+        if n_count_train > 0:
+            file.create_group(f'train/{n_train}')
+            for field in self.field_list:
+                pad_value = 0.0
+                if isinstance(storage_train[field][0], np.ndarray):
+                    if storage_train[field][0].dtype in (np.int8, np.uint8, np.int16, np.uint16, np.int32, np.uint32, 
+                                                np.int64, np.uint64):
+                        pad_value = -1
+                        for i in range(len(storage_train[field])):
+                            storage_train[field][i] = storage_train[field][i].astype(np.int64)
+                output = self.stack_(storage_train[field], pad_value)
+                file.create_dataset(f'train/{n_train}/{field}', data=output)
+        if n_count_test > 0:
+            file.create_group(f'test/{n_test}')
+            for field in self.field_list:
+                pad_value = 0.0
+                if isinstance(storage_test[field][0], np.ndarray):
+                    if storage_test[field][0].dtype in (np.int8, np.uint8, np.int16, np.uint16, np.int32, np.uint32, 
+                                                np.int64, np.uint64):
+                        pad_value = -1
+                        for i in range(len(storage_test[field])):
+                            storage_test[field][i] = storage_test[field][i].astype(np.int64)
+                output = self.stack_(storage_test[field], pad_value)
+                file.create_dataset(f'test/{n_test}/{field}', data=output)
+
 class DataIterator(Dataset):
     '''
     The data iterator for pre-defined hdf5 structure that split in batch and split train/test

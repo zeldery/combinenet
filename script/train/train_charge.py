@@ -111,21 +111,25 @@ def main():
             rmse_train.append((total_loss.detach().tolist()/n_atoms)**0.5)
             
             data.mode = 'test'
-            n_atoms = 0
-            total_loss = torch.tensor(0.0, dtype=torch.float32, device=device)
-            for batch_data in loader:
-                #### Change here for different field name
-                atomic_numbers = batch_data['atomic_numbers'].to(torch.int64).to(device)
-                positions = batch_data['coordinates'].to(torch.float32).to(device)
-                charge = batch_data['q'].to(torch.float32).to(device)
+            if len(data) == 0:
+                rmse_test.append(-1.0)
+                scheduler.step(total_loss)
+            else:
+                n_atoms = 0
+                total_loss = torch.tensor(0.0, dtype=torch.float32, device=device)
+                for batch_data in loader:
+                    #### Change here for different field name
+                    atomic_numbers = batch_data['atomic_numbers'].to(torch.int64).to(device)
+                    positions = batch_data['coordinates'].to(torch.float32).to(device)
+                    charge = batch_data['q'].to(torch.float32).to(device)
 
-                predicted = model.batch_compute_charge(atomic_numbers, positions)
-                mask = (atomic_numbers.flatten() != -1)
-                n_atoms += mask.sum().item()
-                loss = criterion_eval(predicted.flatten()[mask], charge.flatten()[mask])
-                total_loss += loss
-            scheduler.step(total_loss)
-            rmse_test.append((total_loss.detach().tolist()/n_atoms)**0.5)
+                    predicted = model.batch_compute_charge(atomic_numbers, positions)
+                    mask = (atomic_numbers.flatten() != -1)
+                    n_atoms += mask.sum().item()
+                    loss = criterion_eval(predicted.flatten()[mask], charge.flatten()[mask])
+                    total_loss += loss
+                scheduler.step(total_loss)
+                rmse_test.append((total_loss.detach().tolist()/n_atoms)**0.5)
         if args.gpu == 'cuda':
             torch.cuda.synchronize()
         validation_time.append(time.time() - begin_time)
