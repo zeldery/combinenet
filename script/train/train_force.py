@@ -113,19 +113,23 @@ def main():
                 total_loss += loss
             rmse_train.append((total_loss.detach().tolist()/n_structure)**0.5)
             data.mode = 'test'
-            n_structure = 0
-            total_loss = torch.tensor(0.0, dtype=torch.float64, device=device)
-            for batch_data in loader:
-                #### Change here for different field name
-                atomic_numbers = batch_data['atomic_numbers'].to(torch.int64).to(device)
-                positions = batch_data['coordinates'].to(torch.float32).to(device)
-                energies = batch_data['energies'].to(device)
-                n_structure += energies.shape[0]
-                predicted = model.batch_compute(atomic_numbers, positions)
-                loss = criterion_eval(predicted, energies)
-                total_loss += loss
-            scheduler.step(total_loss)
-            rmse_test.append((total_loss.detach().tolist()/n_structure)**0.5)
+            if len(data) == 0:
+                rmse_test.append(-1.0)
+                scheduler.step(total_loss)
+            else:
+                n_structure = 0
+                total_loss = torch.tensor(0.0, dtype=torch.float64, device=device)
+                for batch_data in loader:
+                    #### Change here for different field name
+                    atomic_numbers = batch_data['atomic_numbers'].to(torch.int64).to(device)
+                    positions = batch_data['coordinates'].to(torch.float32).to(device)
+                    energies = batch_data['energies'].to(device)
+                    n_structure += energies.shape[0]
+                    predicted = model.batch_compute(atomic_numbers, positions)
+                    loss = criterion_eval(predicted, energies)
+                    total_loss += loss
+                scheduler.step(total_loss)
+                rmse_test.append((total_loss.detach().tolist()/n_structure)**0.5)
         if args.gpu == 'cuda':
             torch.cuda.synchronize()
         validation_time.append(time.time() - begin_time)

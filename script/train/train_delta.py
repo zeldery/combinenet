@@ -115,21 +115,24 @@ def main():
                 n_structure += after.shape[0]
                 total_loss += loss
             rmse_train.append((total_loss.detach().tolist()/n_structure)**0.5)
-
             data.mode = 'test'
-            n_structure = 0
-            total_loss = torch.tensor(0.0, dtype=torch.float64, device=device)
-            for batch_data in loader:
-                atomic_numbers = batch_data['atomic_numbers'].to(torch.int64).to(device)
-                positions = batch_data['coordinates'].to(torch.float32).to(device)
-                before = batch_data[args.before].to(torch.float64).to(device)
-                after = batch_data[args.after].to(torch.float64).to(device)
-                predicted = model.batch_compute(atomic_numbers, positions, before)
-                loss = criterion_eval(predicted, after)
-                n_structure += after.shape[0]
-                total_loss += loss
-            scheduler.step(total_loss)
-            rmse_test.append((total_loss.detach().tolist()/n_structure)**0.5)
+            if len(data) == 0:
+                rmse_test.append(-1.0)
+                scheduler.step(total_loss)
+            else:
+                n_structure = 0
+                total_loss = torch.tensor(0.0, dtype=torch.float64, device=device)
+                for batch_data in loader:
+                    atomic_numbers = batch_data['atomic_numbers'].to(torch.int64).to(device)
+                    positions = batch_data['coordinates'].to(torch.float32).to(device)
+                    before = batch_data[args.before].to(torch.float64).to(device)
+                    after = batch_data[args.after].to(torch.float64).to(device)
+                    predicted = model.batch_compute(atomic_numbers, positions, before)
+                    loss = criterion_eval(predicted, after)
+                    n_structure += after.shape[0]
+                    total_loss += loss
+                scheduler.step(total_loss)
+                rmse_test.append((total_loss.detach().tolist()/n_structure)**0.5)
         if args.gpu == 'cuda':
             torch.cuda.synchronize()
         validation_time.append(time.time() - begin_time)
