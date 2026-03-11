@@ -5,14 +5,14 @@ Training script for the delta learning
 import argparse
 import torch
 import time
+from tqdm import tqdm
 from combinenet.combine import *
 from combinenet.dataloader import DataIterator
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 def get_argument():
-    parser = argparse.ArgumentParser('train_delta', 
-                                     description='Training script for delta learning')
+    parser = argparse.ArgumentParser('train_delta', description='Training script for delta learning')
     parser.add_argument('-m', '--model', default='model.pt')
     parser.add_argument('-c', '--checkpoint', default='checkpoint.pt')
     parser.add_argument('-b', '--before', default='dftb')
@@ -32,7 +32,6 @@ def main():
         device = torch.device(args.gpu)
     except:
         raise ValueError(f'Unvalid value for gpu argument of {args.gpu}')
-    
     if args.type == 'short':
         model = DeltaModel()
         model.read(args.model)
@@ -41,7 +40,6 @@ def main():
         model.read(args.model)
     else:
         raise ValueError(f'Unvalid value for model type of {args.type}')
-    
     data = DataIterator(args.data, ['atomic_numbers', 'coordinates', args.before, args.after])
     loader = data.dataloader(shuffle=True)
     criterion = torch.nn.MSELoss()
@@ -82,7 +80,8 @@ def main():
         raise ValueError(f'Incorrect option for restart {args.restart}')
     scheduler = ReduceLROnPlateau(optimizer, factor=0.5, patience=100, threshold=0)
 
-    for epoch in range(start_iteration, int(args.epoch)):
+    pbar = tqdm(range(start_iteration, int(args.epoch)), desc='Training')
+    for epoch in pbar:
         if args.gpu == 'cuda':
             torch.cuda.synchronize()
         begin_time = time.time()
@@ -136,11 +135,17 @@ def main():
         if args.gpu == 'cuda':
             torch.cuda.synchronize()
         validation_time.append(time.time() - begin_time)
-        if rmse_test[-1] < best_rmse:
-            best_rmse = rmse_test[-1]
-            best_model = model.dump()
+        if len(data) == 0:
+            if rmse_train[-1] < best_rmse:
+                best_rmse = rmse_train[-1]
+                best_model = model.dump()
+        else:
+            if rmse_test[-1] < best_rmse:
+                best_rmse = rmse_test[-1]
+                best_model = model.dump()
+        pbar.set_postfix({'train': f'{rmse_train[-1]:.4f}', 'test': f'{rmse_test[-1]:.4f}'})
         # Checkpoint
-        save_dict = {'optimizer': optimizer.state_dict(), 'epoch_finished': epoch+1, 
+        save_dict = {'optimizer': optimizer.state_dict(), 'epoch_finished': epoch+1,
                      'rmse_train': rmse_train, 'rmse_test': rmse_test,
                      'train_time': train_time, 'validation_time': validation_time,
                      'best_rmse': best_rmse, 'current_model': model.dump(), 'best_model': best_model}

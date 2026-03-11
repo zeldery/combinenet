@@ -57,26 +57,28 @@ def main():
         output = pd.DataFrame(columns=['train', 'reference', 'predict'], index=np.arange(total_structure))
         current = 0
         scanner.mode = 'train'
-        for data in tqdm(loader, desc='Train'):
-            n = data['energies'].shape[0]
-            # WARNING: loc in pandas includes the last index
-            output.loc[current:(current+n-1), 'train'] = 1
-            output.loc[current:(current+n-1), 'reference'] = data['energies'].detach().cpu().squeeze().numpy()
-            atomic_numbers = data['atomic_numbers'].to(torch.int64).to(device)
-            positions = data['coordinates'].to(torch.float32).to(device)
-            predicted = model.batch_compute(atomic_numbers, positions).detach().cpu().squeeze().numpy()
-            output.loc[current:(current+n-1), 'predict'] = predicted
-            current += n
+        if len(scanner) > 0:
+            for data in tqdm(loader, desc='Train'):
+                n = data['energies'].shape[0]
+                # WARNING: loc in pandas includes the last index
+                output.loc[current:(current+n-1), 'train'] = 1
+                output.loc[current:(current+n-1), 'reference'] = data['energies'].detach().cpu().squeeze().numpy()
+                atomic_numbers = data['atomic_numbers'].to(torch.int64).to(device)
+                positions = data['coordinates'].to(torch.float32).to(device)
+                predicted = model.batch_compute(atomic_numbers, positions).detach().cpu().squeeze().numpy()
+                output.loc[current:(current+n-1), 'predict'] = predicted
+                current += n
         scanner.mode = 'test'
-        for data in tqdm(loader, desc='Test'):
-            n = data['energies'].shape[0]
-            output.loc[current:(current+n-1), 'train'] = 0
-            output.loc[current:(current+n-1), 'reference'] = data['energies'].detach().cpu().squeeze().numpy()
-            atomic_numbers = data['atomic_numbers'].to(torch.int64).to(device)
-            positions = data['coordinates'].to(torch.float32).to(device)
-            predicted = model.batch_compute(atomic_numbers, positions).detach().cpu().squeeze().numpy()
-            output.loc[current:(current+n-1), 'predict'] = predicted
-            current += n
+        if len(scanner) > 0:
+            for data in tqdm(loader, desc='Test'):
+                n = data['energies'].shape[0]
+                output.loc[current:(current+n-1), 'train'] = 0
+                output.loc[current:(current+n-1), 'reference'] = data['energies'].detach().cpu().squeeze().numpy()
+                atomic_numbers = data['atomic_numbers'].to(torch.int64).to(device)
+                positions = data['coordinates'].to(torch.float32).to(device)
+                predicted = model.batch_compute(atomic_numbers, positions).detach().cpu().squeeze().numpy()
+                output.loc[current:(current+n-1), 'predict'] = predicted
+                current += n
     output.to_csv(args.output)
 
 

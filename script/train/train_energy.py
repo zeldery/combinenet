@@ -4,6 +4,7 @@ Train the short-range
 
 import torch
 import argparse
+from tqdm import tqdm
 from combinenet.dataloader import DataIterator
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from combinenet.combine import ShortRangeModel
@@ -72,7 +73,8 @@ def main():
         raise ValueError(f'Incorrect option for restart {args.restart}')
     scheduler = ReduceLROnPlateau(optimizer, factor=0.5, patience=100, threshold=0)
 
-    for epoch in range(start_iteration, int(args.epoch)):
+    pbar = tqdm(range(start_iteration, int(args.epoch)), desc='Training')
+    for epoch in pbar:
         if args.gpu == 'cuda':
             torch.cuda.synchronize()
         begin_time = time.time()
@@ -130,9 +132,15 @@ def main():
             torch.cuda.synchronize()
         validation_time.append(time.time() - begin_time)
         # Check best model
-        if rmse_test[-1] < best_rmse:
-            best_rmse = rmse_test[-1]
-            best_model = model.dump()
+        if len(data) == 0:
+            if rmse_train[-1] < best_rmse:
+                best_rmse = rmse_train[-1]
+                best_model = model.dump()
+        else:
+            if rmse_test[-1] < best_rmse:
+                best_rmse = rmse_test[-1]
+                best_model = model.dump()
+        pbar.set_postfix({'train': f'{rmse_train[-1]:.4f}', 'test': f'{rmse_test[-1]:.4f}'})
         # Saving checkpoint
         save_dict = {'optimizer': optimizer.state_dict(), 'epoch_finished': epoch+1, \
                      'rmse_train': rmse_train, 'rmse_test': rmse_test, \
