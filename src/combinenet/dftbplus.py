@@ -3,7 +3,7 @@ Interface with dftbplus
 Only work on Linux/MacOS
 '''
 
-from .utils import ELEMENT_DICTIONARY
+from .utils import ELEMENT_DICTIONARY, ANGSTROM_TO_BOHR
 import os
 import numpy as np
 
@@ -137,10 +137,12 @@ ParserOptions = {
         outputs = [energy]
         if force:
             forces = np.array(forces, dtype=np.float32)
+            forces *= ANGSTROM_TO_BOHR
             outputs.append(forces)
         if hessian:
             n = int(len(hessians)**0.5)
             hessians = np.array(hessians, dtype=np.float32).reshape(n, n)
+            hessians *= ANGSTROM_TO_BOHR**2
             outputs.append(hessians)
         return outputs
 

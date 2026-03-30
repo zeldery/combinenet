@@ -1,8 +1,9 @@
 '''
 Training script for the delta learning with Hessian regularization.
-The loss includes the mean absolute value of the full Hessian matrix, computed
-exactly via double backward (second-order autograd):
-    mean(|H|)  where H_ij = d^2 E / (d x_i d x_j)
+The loss includes the mean absolute value of the Hessian diagonal, estimated
+via the Hutchinson estimator:
+    E_v[mean(|v ⊙ Hv|)]  for v ~ N(0, I)
+which is an unbiased estimator of mean(|diag(H)|).
 '''
 
 import argparse
@@ -15,8 +16,8 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 def get_argument():
-    parser = argparse.ArgumentParser('train_delta_hessian',
-                                     description='Training script for delta learning with Hessian regularization')
+    parser = argparse.ArgumentParser('train_delta_hessian_hutchinson',
+                                     description='Training script for delta learning with Hessian diagonal regularization (Hutchinson estimator)')
     parser.add_argument('-m', '--model', default='model.pt')
     parser.add_argument('-c', '--checkpoint', default='checkpoint.pt')
     parser.add_argument('-b', '--before', default='dftb')
@@ -28,6 +29,7 @@ def get_argument():
     parser.add_argument('-l', '--learningrate', default='0.001')
     parser.add_argument('-r', '--restart', default='0')
     parser.add_argument('--hessian_weight', default='0.0')
+    parser.add_argument('--hessian_samples', default='1')
     args = parser.parse_args()
     return args
 
@@ -85,6 +87,7 @@ def main():
         raise ValueError(f'Incorrect option for restart {args.restart}')
     scheduler = ReduceLROnPlateau(optimizer, factor=0.5, patience=100, threshold=0)
     hessian_weight = float(args.hessian_weight)
+    hessian_samples = int(args.hessian_samples)
 
     pbar = tqdm(range(start_iteration, int(args.epoch)), desc='Training')
     for epoch in pbar:
@@ -103,16 +106,16 @@ def main():
             predicted = model.batch_compute(atomic_numbers, positions, before)
             loss = criterion(predicted, after)
             if hessian_weight > 0.0:
-                # Exact full Hessian magnitude via double backward:
-                # mean(|d^2 E / (d x_i d x_j)|) for all i, j
+                # Hutchinson estimator for mean absolute Hessian diagonal:
+                # E_v[mean(|v ⊙ Hv|)]  for v ~ N(0, I)
                 grads = torch.autograd.grad(predicted.sum(), positions, create_graph=True)[0]
-                grads_flat = grads.reshape(-1)
-                n_coords = grads_flat.shape[0]
-                hessian = torch.stack([
-                    torch.autograd.grad(grads_flat[i], positions, retain_graph=True)[0].reshape(-1)
-                    for i in range(n_coords)
-                ])  # shape: (n_coords, n_coords)
-                hessian_mag = hessian.abs().mean()
+                hessian_mag = torch.tensor(0.0, dtype=torch.float32, device=device)
+                for _ in range(hessian_samples):
+                    v = torch.randn_like(positions)
+                    gv = (grads * v).sum()
+                    hv = torch.autograd.grad(gv, positions, retain_graph=True)[0]
+                    hessian_mag = hessian_mag + (v * hv).abs().mean()
+                hessian_mag = hessian_mag / hessian_samples
                 loss = loss + hessian_weight * hessian_mag
             loss.backward()
             optimizer.step()
