@@ -28,6 +28,7 @@ def get_argument():
     parser.add_argument('-e', '--epoch', default='100')
     parser.add_argument('-l', '--learningrate', default='0.001')
     parser.add_argument('-r', '--restart', default='0')
+    parser.add_argument('-n', '--ncpu', default='8')
     parser.add_argument('--hessian_weight', default='0.0')
     parser.add_argument('--hessian_samples', default='1')
     args = parser.parse_args()
@@ -35,6 +36,8 @@ def get_argument():
 
 def main():
     args = get_argument()
+    torch.set_num_threads(int(args.ncpu))
+    torch.set_num_interop_threads(int(args.ncpu))
     try:
         device = torch.device(args.gpu)
     except:
