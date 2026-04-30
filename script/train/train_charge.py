@@ -21,11 +21,14 @@ def get_argument():
     parser.add_argument('-e', '--epoch', default='100')
     parser.add_argument('-l', '--learningrate', default='0.001')
     parser.add_argument('-r', '--restart', default='0')
+    parser.add_argument('-n', '--ncpu', default='8')
     args = parser.parse_args()
     return args
 
 def main():
     args = get_argument()
+    torch.set_num_threads(int(args.ncpu))
+    torch.set_num_interop_threads(int(args.ncpu))
     model = ChargeModel()
     model.read(args.model)
     try:
