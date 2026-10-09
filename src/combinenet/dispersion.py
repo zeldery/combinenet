@@ -131,8 +131,8 @@ class ExchangeHoleDispersion(nn.Module):
         energy_6 = -c6 / (distance ** 6 + r_vdw ** 6) * cut_off_value * BOHR_TO_ANGSTROM**6 # See non-batch version
         energy_8 = -c8 / (distance ** 8 + r_vdw ** 8) * cut_off_value * BOHR_TO_ANGSTROM**8
         energy_10 = -c10 / (distance ** 10 + r_vdw ** 10) * cut_off_value * BOHR_TO_ANGSTROM**10
-        number_atoms = (index != -1).sum(dim=1)
-        batch_index = torch.repeat_interleave(number_atoms)
+        n_atom_pad = atomic_index.shape[1]
+        batch_index = index[0] // n_atom_pad
         energy_6_batch = torch.zeros((n_batch,), dtype=torch.float32, device=positions.device)
         energy_6_batch.index_add_(dim=0, index=batch_index, source=energy_6)
         energy_8_batch = torch.zeros((n_batch,), dtype=torch.float32, device=positions.device)
@@ -189,7 +189,7 @@ class ExchangeHoleDispersion(nn.Module):
         cut_off_value = dispersion_cut_off(distance, self.cut_off)
         # The energy has the inclusion of damping function already
         energy_6 = -c6 / (distance ** 6 + r_vdw ** 6) * cut_off_value * BOHR_TO_ANGSTROM**6 # Change the distance unit from angstrom to bohr
-        energy_8 = -c8 / (distance ** 8 + r_vdw ** 6) * cut_off_value * BOHR_TO_ANGSTROM**8
+        energy_8 = -c8 / (distance ** 8 + r_vdw ** 8) * cut_off_value * BOHR_TO_ANGSTROM**8
         energy_10 = -c10 / (distance ** 10 + r_vdw ** 10) * cut_off_value * BOHR_TO_ANGSTROM**10
         return energy_6.sum() + energy_8.sum() + energy_10.sum()
 
